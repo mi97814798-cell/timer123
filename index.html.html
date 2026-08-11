@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>マルチタイマー＆クロック (演出カスタム版)</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Lora:wght@400;700&family=Montserrat:wght@400;700;900&family=Noto+Sans+JP:wght@100..900&family=Open+Sans:wght@400;700;800&family=Oswald:wght@400;700&family=Pacifico&family=Poppins:wght@400;700;900&family=Playfair+Display:wght@400;700;900&family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-color: #1e293b;
+      --sub-text-color: #64748b;
+      --border-color: #e2e8f0;
+      --divider-color: #cbd5e1;
+      --primary-btn-bg: #22c55e;
+      --primary-btn-text: #ffffff;
+      --accent-color: #0284c7;
+      --total-card-bg: #f1f5f9;
+      --app-font-family: 'Noto Sans JP', sans-serif;
+      --app-font-weight: 700;
+      --app-font-scale: 1;
+    }
+
+    [data-theme="dark"] {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-color: #f8fafc;
+      --sub-text-color: #94a3b8;
+      --border-color: #334155;
+      --divider-color: #475569;
+      --primary-btn-bg: #16a34a;
+      --primary-btn-text: #ffffff;
+      --accent-color: #38bdf8;
+      --total-card-bg: #0f172a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      font-family: var(--app-font-family);
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background-color 0.3s, color 0.3s;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .container {
+      background: var(--card-bg);
+      width: 98vw;
+      max-width: 1380px;
+      height: 98vh;
+      max-height: 98vh;
+      padding: 12px 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* ヘッダー */
+    .header-section {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      padding-top: 4px;
+      min-height: 60px;
+      transition: all 0.3s ease;
+    }
+
+    .header-section.has-active-task {
+      justify-content: space-between;
+    }
+
+    .clock-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .header-section.has-active-task .clock-container {
+      align-items: flex-start;
+      margin-left: 10px;
+    }
+
+    .header-actions {
+      position: absolute;
+      top: 0;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      z-index: 10;
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      font-size: 1.6rem;
+      color: var(--text-color);
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 6px;
+      line-height: 1;
+      transition: background 0.2s;
+    }
+
+    .action-btn:hover { background-color: var(--border-color); }
+    .add-btn { font-size: 1.5rem; font-weight: bold; color: var(--accent-color); }
+
+    .bg-status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 6px 10px;
+      background: rgba(2, 132, 199, 0.08);
+      border: 1px solid var(--accent-color);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+    .bg-status-title {
+      font-weight: bold;
+      color: var(--accent-color);
+      white-space: nowrap;
+    }
+    .bg-status-item {
+      background: var(--card-bg);
+      border: 1px solid var(--accent-color);
+      padding: 3px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.2s;
+      font-weight: bold;
+    }
+    .bg-status-item:hover {
+      background-color: var(--accent-color);
+      color: #ffffff;
+    }
+    .bg-status-pulse {
+      width: 8px; height: 8px;
+      background-color: #22c55e;
+      border-radius: 50%;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.2); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .active-task-banner {
+      display: none;
+      background: rgba(2, 132, 199, 0.1);
+      border: 1.5px solid var(--accent-color);
+      padding: 6px 16px;
+      border-radius: 10px;
+      text-align: right;
+      margin-right: 60px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .header-section.has-active-task .active-task-banner { display: block; }
+    .active-task-label { font-size: 0.72rem; color: var(--sub-text-color); font-weight: bold; }
+    .active-task-title {
+      font-size: calc(1.3rem * var(--app-font-scale));
+      font-weight: var(--app-font-weight);
+      color: var(--accent-color);
+      line-height: 1.2;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .current-time {
+      font-size: calc(2.6rem * var(--app-font-scale));
+      font-weight: var(--app-font-weight);
+      color: var(--text-color);
+      line-height: 1;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      font-variant-numeric: tabular-nums;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .current-date {
+      font-size: calc(0.95rem * var(--app-font-scale));
+      color: var(--sub-text-color);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    .divider {
+      border: 0;
+      height: 1px;
+      background: var(--divider-color);
+      margin: 8px 0 10px 0;
+      flex-shrink: 0;
+    }
+
+    @keyframes blink-colon { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    .colon-blink { animation: blink-colon 1s steps(1) infinite; }
+
+    /* ダッシュボード */
+    .dashboard-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      flex-grow: 1;
+      align-content: flex-start;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px 14px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: auto;
+      resize: both;
+      min-width: 280px;
+      min-height: 200px;
+      width: 320px;
+      height: 220px;
+      transition: background-color 0.3s;
+      position: relative;
+    }
+
+    .card.col-span-2 { width: 650px; }
+
+    @keyframes blink-red {
+      0%, 100% { background-color: var(--card-bg); }
+      50% { background-color: #fca5a5; }
+    }
+    .card.flash-red { animation: blink-red 0.6s ease-in-out 5; }
+
+    .card-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      border-bottom: 1px dashed var(--border-color);
+      padding-bottom: 4px;
+      flex-shrink: 0;
+    }
+    .card-move-btns { display: flex; gap: 2px; }
+    .icon-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 0.85rem; color: var(--sub-text-color);
+      padding: 2px 4px; border-radius: 4px;
+    }
+    .icon-btn:hover { background-color: var(--border-color); color: var(--text-color); }
+
+    .card-header {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 4px; flex-shrink: 0;
+    }
+
+    .card-title { font-size: 0.92rem; font-weight: 700; color: var(--text-color); }
+
+    .status-badge {
+      font-size: 0.78rem; padding: 2px 6px; border-radius: 4px;
+      background: var(--border-color); color: var(--sub-text-color); font-weight: 700;
+    }
+    .status-badge.work { background: #dcfce7; color: #166534; }
+    .status-badge.rest { background: #feefc3; color: #854d0e; }
+
+    .controls-header { display: flex; gap: 6px; align-items: center; }
+
+    select, input[type="number"], input[type="time"], input[type="text"] {
+      font-family: inherit; padding: 2px 4px; border-radius: 4px;
+      border: 1px solid var(--divider-color); font-size: 0.82rem;
+      background-color: var(--card-bg); color: var(--text-color); outline: none;
+    }
+
+    input[type="number"]:disabled, input[type="time"]:disabled {
+      opacity: 0.5; cursor: not-allowed;
+    }
+
+    /* 数字表示エリア＆演出用スタイル */
+    .time-display {
+      font-family: inherit;
+      font-size: calc(2.0rem * var(--app-font-scale));
+      font-weight: var(--app-font-weight);
+      color: var(--text-color);
+      letter-spacing: 0;
+      margin: 2px 0;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      white-space: nowrap;
+      flex-grow: 1;
+    }
+
+    .num-part {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.62em;
+      height: 1.1em;
+      position: relative;
+      overflow: hidden;
+      vertical-align: middle;
+    }
+
+    .digit-inner {
+      display: inline-block;
+      transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
+      will-change: transform, opacity;
+    }
+
+    /* 各種アニメーション効果 */
+    /* 1. スライド（ドラムロール式上下） */
+    .num-part.anim-slide .digit-inner.animating {
+      animation: numSlide 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes numSlide {
+      0% { transform: translateY(-60%); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    /* 2. フェード */
+    .num-part.anim-fade .digit-inner.animating {
+      animation: numFade 0.2s ease-in-out;
+    }
+    @keyframes numFade {
+      0% { opacity: 0.1; }
+      100% { opacity: 1; }
+    }
+
+    /* 3. ポップ / スケール */
+    .num-part.anim-pop .digit-inner.animating {
+      animation: numPop 0.2s ease;
+    }
+    @keyframes numPop {
+      0% { transform: scale(1.3); opacity: 0.5; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .colon-part {
+      display: inline-block;
+      text-align: center;
+      width: 0.35em;
+      opacity: 0.8;
+    }
+
+    .mask-box {
+      display: inline-block;
+      width: 0.48em;
+      height: 0.65em;
+      background-color: currentColor;
+      border-radius: 2px;
+    }
+
+    .controls-body {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex-shrink: 0;
+    }
+
+    .btn {
+      font-family: inherit; font-weight: 700; padding: 4px 12px; border: none;
+      border-radius: 6px; font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
+    }
+
+    .btn-toggle { background-color: var(--primary-btn-bg); color: var(--primary-btn-text); min-width: 75px; }
+    .btn-toggle.running { background-color: #ef4444; color: #ffffff; }
+
+    .btn-reset { background-color: var(--border-color); color: var(--text-color); }
+    .btn-reset:hover { filter: brightness(0.9); }
+
+    .btn-danger { background-color: #fca5a5; color: #7f1d1d; }
+    .btn-danger:hover { background-color: #f87171; color: #ffffff; }
+
+    .timer-setup-group { display: flex; flex-direction: column; gap: 2px; margin: 1px 0; flex-shrink: 0; }
+    .timer-setup { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--sub-text-color); }
+    .timer-setup input[type="number"] { width: 42px; text-align: center; }
+
+    .time-info-line { font-size: 0.75rem; color: var(--sub-text-color); display: flex; gap: 10px; margin-top: 2px; flex-shrink: 0; }
+
+    .checkbox-label {
+      font-size: 0.8rem; color: var(--sub-text-color); display: flex; align-items: center; gap: 3px; cursor: pointer; user-select: none;
+    }
+
+    .note { font-size: 0.72rem; color: var(--sub-text-color); line-height: 1.1; flex-shrink: 0; }
+
+    .progress-container { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
+    .progress-info { display: flex; justify-content: space-between; font-size: 0.72rem; font-weight: 700; color: var(--sub-text-color); }
+    .progress-bar-bg { width: 100%; height: 8px; background-color: var(--border-color); border-radius: 4px; overflow: hidden; position: relative; }
+    .progress-bar-fill { height: 100%; width: 0%; border-radius: 4px; transition: width 0.1s linear, background-color 0.2s; }
+
+    .task-list { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+    .task-item {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-color); padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; border: 1px solid var(--border-color);
+    }
+    .task-item-info { display: flex; gap: 8px; align-items: center; }
+    .task-item-title { font-weight: bold; }
+    .task-item-time { color: var(--sub-text-color); }
+    .task-delete-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-weight: bold; padding: 0 4px; }
+
+    /* モーダル */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.4); z-index: 150; display: none; justify-content: center; align-items: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-card {
+      background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px;
+      padding: 16px; width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 12px;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1rem; }
+
+    /* ドロワー */
+    .drawer-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.4); z-index: 99; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .drawer-overlay.active { opacity: 1; pointer-events: auto; }
+
+    .drawer-menu {
+      position: fixed; top: 0; right: -360px; width: 340px; height: 100vh;
+      background: var(--card-bg); color: var(--text-color); box-shadow: -4px 0 15px rgba(0, 0, 0, 0.15);
+      z-index: 100; transition: right 0.3s ease-in-out; display: flex; flex-direction: column; padding: 20px; overflow-y: auto;
+    }
+    .drawer-menu.active { right: 0; }
+
+    .drawer-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; }
+    .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-color); }
+    .setting-section { margin-bottom: 20px; }
+    .setting-label { font-size: 0.9rem; font-weight: 700; margin-bottom: 8px; display: block; }
+
+    .font-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+    .font-card {
+      border: 1px solid var(--border-color); padding: 6px 8px; border-radius: 6px; cursor: pointer;
+      font-size: 0.8rem; text-align: center; background: var(--bg-color);
+    }
+    .font-card.active { border-color: var(--accent-color); background: rgba(2, 132, 199, 0.1); font-weight: bold; }
+    .font-card .preview-text { font-size: 1.1rem; display: block; margin-bottom: 2px; }
+
+    .range-group { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .range-group input[type="range"] { flex: 1; }
+
+    .radio-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .radio-label { font-size: 0.85rem; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+
+    .accordion-toggle {
+      display: flex; justify-content: space-between; align-items: center; width: 100%;
+      background: none; border: none; font-size: 0.9rem; font-weight: 700; color: var(--text-color);
+      cursor: pointer; padding: 8px 0; border-top: 1px solid var(--border-color);
+    }
+    .accordion-content { display: none; padding-top: 10px; flex-direction: column; gap: 12px; }
+    .accordion-content.active { display: flex; }
+    .color-picker-group { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="bg-status-bar" id="bg-status-bar" style="display: none;">
+      <span class="bg-status-title">⚡ バックグラウンド稼働中 (クリックで表示):</span>
+      <div id="bg-status-list" style="display: flex; gap: 6px;"></div>
+    </div>
+
+    <div class="header-section" id="header-section">
+      <div class="clock-container">
+        <div class="current-time" id="clock-time"></div>
+        <div class="current-date" id="clock-date">----/--/--/--</div>
+      </div>
+      
+      <div class="active-task-banner" id="active-task-banner">
+        <div class="active-task-label">現在実行中のタスク</div>
+        <div class="active-task-title" id="active-task-title">---</div>
+      </div>
+
+      <div class="header-actions">
+        <button class="action-btn" onclick="toggleDrawer()" title="設定メニュー">≡</button>
+        <button class="action-btn add-btn" onclick="toggleAddCardModal()" title="カードを追加">＋</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="dashboard-grid" id="dashboard-grid"></div>
+  </div>
+
+  <div class="modal-overlay" id="add-card-modal" onclick="closeAddCardModal(event)">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>新規カードを追加</span>
+        <button class="close-btn" onclick="toggleAddCardModal()">✕</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+        <button class="btn btn-reset" style="padding: 10px; text-align: left;" onclick="addCard('timer')">⏱ タイマー カードを追加</button>
+        <button class="btn btn-reset" style="padding: 10px; text-align: left;" onclick="addCard('sw')">⏲ ストップウォッチ カードを追加</button>
+        <button class="btn btn-reset" style="padding: 10px; text-align: left;" onclick="addCard('task')">📋 登録済みタスク一覧 カードを追加</button>
+        <button class="btn btn-reset" style="padding: 10px; text-align: left;" onclick="addCard('total')">📊 現在の作業時間合計 カードを追加</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="task-modal" onclick="closeTaskModal(event)">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>タスク・スケジュール登録</span>
+        <button class="close-btn" onclick="toggleTaskModal()">✕</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--sub-text-color);">
+          <label>タスク名</label>
+          <input type="text" id="task-name" placeholder="例: 読書, 勉強, 打ち合わせ" />
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--sub-text-color);">
+          <label>時間</label>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <input type="time" id="task-start-time" value="09:00" style="flex:1;" />
+            <span>〜</span>
+            <input type="time" id="task-end-time" value="10:00" style="flex:1;" />
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--sub-text-color);">
+          <label>繰り返し設定</label>
+          <select id="task-repeat">
+            <option value="once">1日限り (今日)</option>
+            <option value="daily">毎日繰り返し</option>
+          </select>
+        </div>
+        <button class="btn btn-toggle" style="margin-top:8px; padding:8px;" onclick="addNewTask()">追加する</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="drawer-overlay" id="drawer-overlay" onclick="toggleDrawer()"></div>
+
+  <div class="drawer-menu" id="drawer-menu">
+    <div class="drawer-header">
+      <span style="font-size: 1.1rem; font-weight: 700;">設定</span>
+      <button class="close-btn" onclick="toggleDrawer()">✕</button>
+    </div>
+
+    <div class="setting-section" style="background: rgba(239, 68, 68, 0.05); border: 1px dashed #fca5a5; padding: 10px; border-radius: 8px;">
+      <span class="setting-label" style="color: #dc2626;">・ダッシュボード管理・操作</span>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+        <button class="btn btn-reset" style="width: 100%; text-align: center; padding: 8px;" onclick="resetLayout()">🧹 レイアウトを初期化</button>
+        <button class="btn btn-danger" style="width: 100%; text-align: center; padding: 8px;" onclick="resetAllRunningTasks()">🔄 全タイマー・SWを停止＆リセット</button>
+      </div>
+    </div>
+
+    <div class="setting-section">
+      <span class="setting-label">・数字変化アニメーション (秒以上)</span>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <label class="radio-label">
+          <input type="checkbox" id="anim-enable-cb" checked onchange="saveAllData()"> アニメーション演出を有効にする
+        </label>
+        <div style="display:flex; align-items:center; gap:8px; font-size:0.85rem;">
+          <span>演出タイプ:</span>
+          <select id="anim-type-select" onchange="saveAllData()">
+            <option value="slide">スライド (上下)</option>
+            <option value="fade">フェード</option>
+            <option value="pop">ポップ (拡大)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="setting-section">
+      <span class="setting-label">・時計表示</span>
+      <div class="radio-group" style="margin-bottom: 8px;">
+        <label class="radio-label"><input type="checkbox" id="show-time-cb" checked onchange="updateClockSettings()"> 時刻を表示</label>
+        <label class="radio-label"><input type="checkbox" id="show-date-cb" checked onchange="updateClockSettings()"> 日付を表示</label>
+      </div>
+      <span class="setting-label" style="font-size:0.82rem; margin-top: 6px;">・現在時刻の秒表示</span>
+      <div class="radio-group">
+        <label class="radio-label"><input type="radio" name="sec-mode" value="show" checked onclick="updateClockSettings()"> 秒あり</label>
+        <label class="radio-label"><input type="radio" name="sec-mode" value="hide" onclick="updateClockSettings()"> 秒なし (コロン点滅)</label>
+      </div>
+    </div>
+
+    <div class="setting-section">
+      <span class="setting-label">・フォント</span>
+      <div class="font-grid">
+        <div class="font-card active" onclick="setFont('\'Noto Sans JP\', sans-serif', this)">
+          <span class="preview-text" style="font-family: 'Noto Sans JP';">12:34</span>源ノ角ゴシック
+        </div>
+        <div class="font-card" onclick="setFont('\'Roboto\', sans-serif', this)">
+          <span class="preview-text" style="font-family: 'Roboto';">12:34</span>Roboto
+        </div>
+        <div class="font-card" onclick="setFont('\'Open Sans\', sans-serif', this)">
+          <span class="preview-text" style="font-family: 'Open Sans';">12:34</span>Open Sans
+        </div>
+        <div class="font-card" onclick="setFont('\'Montserrat\', sans-serif', this)">
+          <span class="preview-text" style="font-family: 'Montserrat';">12:34</span>Montserrat
+        </div>
+        <div class="font-card" onclick="setFont('\'Oswald\', sans-serif', this)">
+          <span class="preview-text" style="font-family: 'Oswald';">12:34</span>Oswald
+        </div>
+        <div class="font-card" onclick="setFont('\'Playfair Display\', serif', this)">
+          <span class="preview-text" style="font-family: 'Playfair Display';">12:34</span>Playfair
+        </div>
+        <div class="font-card" onclick="setFont('\'Poppins\', sans-serif', this)">
+          <span class="preview-text" style="font-family: 'Poppins';">12:34</span>Poppins
+        </div>
+        <div class="font-card" onclick="setFont('\'Lora\', serif', this)">
+          <span class="preview-text" style="font-family: 'Lora';">12:34</span>Lora
+        </div>
+        <div class="font-card" onclick="setFont('\'Pacifico\', cursive', this)">
+          <span class="preview-text" style="font-family: 'Pacifico';">12:34</span>Pacifico
+        </div>
+        <div class="font-card" onclick="setFont('\'Courier Prime\', monospace', this)">
+          <span class="preview-text" style="font-family: 'Courier Prime';">12:34</span>Courier
+        </div>
+      </div>
+    </div>
+
+    <div class="setting-section">
+      <span class="setting-label">・フォントサイズ</span>
+      <div class="range-group">
+        <input type="range" id="font-scale-slider" min="0.6" max="3.0" step="0.05" value="1" oninput="updateFontScale(this.value)">
+      </div>
+    </div>
+
+    <div class="setting-section">
+      <span class="setting-label">・フォント太さ</span>
+      <div class="range-group">
+        <input type="range" id="font-weight-slider" min="300" max="900" step="100" value="700" oninput="updateFontWeight(this.value)">
+      </div>
+    </div>
+
+    <div class="setting-section">
+      <span class="setting-label">・ストップウォッチ 精度</span>
+      <div class="range-group">
+        <span style="font-size:0.8rem;">小数点:</span>
+        <input type="range" id="sw-precision-slider" min="0" max="3" step="1" value="3" oninput="updatePrecision('sw', this.value)">
+        <span id="sw-precision-val" style="font-size:0.85rem; font-weight:bold;">3桁</span>
+      </div>
+    </div>
+
+    <div class="setting-section">
+      <span class="setting-label">・タイマー 精度</span>
+      <div class="range-group">
+        <span style="font-size:0.8rem;">小数点:</span>
+        <input type="range" id="timer-precision-slider" min="0" max="3" step="1" value="3" oninput="updatePrecision('timer', this.value)">
+        <span id="timer-precision-val" style="font-size:0.85rem; font-weight:bold;">3桁</span>
+      </div>
+    </div>
+
+    <div class="setting-section">
+      <span class="setting-label">・テーマ</span>
+      <div class="radio-group">
+        <label class="radio-label"><input type="radio" name="theme" value="light" checked onclick="setTheme('light')"> ライト</label>
+        <label class="radio-label"><input type="radio" name="theme" value="dark" onclick="setTheme('dark')"> ダーク</label>
+        <label class="radio-label"><input type="radio" name="theme" value="system" onclick="setTheme('system')"> システム</label>
+      </div>
+    </div>
+
+    <button class="accordion-toggle" onclick="toggleAccordion('acc-detail', this)">
+      <span>・詳細 (カラーカスタマイズ)</span>
+      <span class="acc-icon">∨</span>
+    </button>
+    <div class="accordion-content" id="acc-detail">
+      <div class="color-picker-group">
+        <span>文字色</span>
+        <input type="color" id="color-text" value="#1e293b" onchange="updateCustomColor('--text-color', this.value)">
+      </div>
+      <div class="color-picker-group">
+        <span>ボタン色 (スタート)</span>
+        <input type="color" id="color-btn" value="#22c55e" onchange="updateCustomColor('--primary-btn-bg', this.value)">
+      </div>
+      <div class="color-picker-group">
+        <span>背景色</span>
+        <input type="color" id="color-bg" value="#f8fafc" onchange="updateCustomColor('--bg-color', this.value)">
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let accumulatedWorkMs = 0;
+    let lastTickTime = Date.now();
+
+    let swPrecision = 3;
+    let timerPrecision = 3;
+    let taskList = [];
+
+    const DEFAULT_DASHBOARD_CARDS = [
+      { id: 'sw1', type: 'sw', title: 'ストップウォッチ 1', size: 'normal' },
+      { id: 'total1', type: 'total', title: '現在の作業時間合計', size: 'normal' },
+      { id: 'task1', type: 'task', title: '登録済みタスク一覧', size: 'normal' },
+      { id: 't1', type: 'timer', title: 'タイマー 1', size: 'normal' },
+      { id: 't2', type: 'timer', title: 'タイマー 2', size: 'normal' }
+    ];
+
+    let dashboardCards = JSON.parse(JSON.stringify(DEFAULT_DASHBOARD_CARDS));
+
+    const swData = {
+      sw1: { name: 'ストップウォッチ 1', running: false, elapsed: 0, startTimeStr: '--:--:--', mode: 'work', hide: false }
+    };
+
+    const timerData = {
+      t1: { name: 'タイマー 1', running: false, isPristine: true, currentPhase: 'A', initialMsA: 300000, initialMsB: 60000, remainingMs: 300000, startTimeStr: '--:--:--', endTimeStr: '--:--:--', mode: 'work', type: 'normal', mute: false, hide: false, minA: 5, secA: 0, minB: 1, secB: 0, targetTime: '12:00' },
+      t2: { name: 'タイマー 2', running: false, isPristine: true, currentPhase: 'A', initialMsA: 1500000, initialMsB: 300000, remainingMs: 1500000, startTimeStr: '--:--:--', endTimeStr: '--:--:--', mode: 'work', type: 'normal', mute: false, hide: false, minA: 25, secA: 0, minB: 5, secB: 0, targetTime: '18:00' }
+    };
+
+    const weekDays = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+
+    function formatTimeString(date) {
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    }
+
+    function checkActiveTasks(now) {
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
+      const currentDate = now.getDate();
+      const nowTimeMs = now.getTime();
+
+      let activeTask = null;
+
+      for (let task of taskList) {
+        const [startH, startM] = task.startTime.split(':').map(Number);
+        const [endH, endM] = task.endTime.split(':').map(Number);
+
+        let startMs = new Date(currentYear, currentMonth, currentDate, startH, startM, 0, 0).getTime();
+        let endMs = new Date(currentYear, currentMonth, currentDate, endH, endM, 0, 0).getTime();
+
+        if (endMs <= startMs) {
+          endMs += 24 * 60 * 60 * 1000;
+        }
+
+        if (task.repeat === 'once') {
+          if (task.dateStr && task.dateStr !== `${currentYear}-${currentMonth + 1}-${currentDate}`) {
+            continue;
+          }
+        }
+
+        if (nowTimeMs >= startMs && nowTimeMs < endMs) {
+          activeTask = task;
+          break;
+        }
+      }
+
+      const headerEl = document.getElementById('header-section');
+      const titleEl = document.getElementById('active-task-title');
+
+      if (activeTask) {
+        headerEl.classList.add('has-active-task');
+        titleEl.textContent = activeTask.name;
+      } else {
+        headerEl.classList.remove('has-active-task');
+      }
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const showTime = document.getElementById('show-time-cb').checked;
+      const showDate = document.getElementById('show-date-cb').checked;
+      const secMode = document.querySelector('input[name="sec-mode"]:checked')?.value || 'show';
+
+      const clockTimeEl = document.getElementById('clock-time');
+      const clockDateEl = document.getElementById('clock-date');
+
+      if (showTime) {
+        clockTimeEl.style.display = 'inline-flex';
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+
+        if (secMode === 'show') {
+          const seconds = String(now.getSeconds()).padStart(2, '0');
+          updateTimeContainer(clockTimeEl, `${hours}:${minutes}:${seconds}`);
+        } else {
+          updateTimeContainer(clockTimeEl, `${hours}:${minutes}`, true);
+        }
+      } else {
+        clockTimeEl.style.display = 'none';
+      }
+
+      if (showDate) {
+        clockDateEl.style.display = 'block';
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const dayOfWeek = weekDays[now.getDay()];
+        clockDateEl.textContent = `${year}/${month}/${day}/${dayOfWeek}`;
+      } else {
+        clockDateEl.style.display = 'none';
+      }
+
+      checkActiveTasks(now);
+    }
+
+    function updateClockSettings() {
+      updateClock();
+      saveAllData();
+    }
+
+    setInterval(updateClock, 1000);
+
+    // --- 高性能アニメーション描画（ミリ秒以下演出なし） ---
+    function updateTimeContainer(containerEl, timeStr, blinkColon = false) {
+      if (!containerEl) return;
+
+      const isAnimEnabled = document.getElementById('anim-enable-cb')?.checked ?? true;
+      const animType = document.getElementById('anim-type-select')?.value || 'slide';
+
+      const parts = timeStr.split(':');
+      let milliPart = '';
+      let secParts = parts;
+
+      // 小数点（ミリ秒等）が含まれる場合は分離する
+      if (parts.length > 3) {
+        secParts = parts.slice(0, 3);
+        milliPart = parts.slice(3).join(':');
+      }
+
+      const mainTimeStr = secParts.join(':');
+
+      // コンテナ初期化・再構築チェック
+      if (containerEl.children.length === 0 || containerEl.getAttribute('data-str-len') !== String(timeStr.length)) {
+        containerEl.innerHTML = '';
+        containerEl.setAttribute('data-str-len', String(timeStr.length));
+
+        // 秒以上の部分
+        for (let i = 0; i < mainTimeStr.length; i++) {
+          const char = mainTimeStr[i];
+          if (char === ':') {
+            const colon = document.createElement('span');
+            colon.className = `colon-part ${blinkColon ? 'colon-blink' : ''}`;
+            colon.textContent = ':';
+            containerEl.appendChild(colon);
+          } else {
+            const numPart = document.createElement('span');
+            numPart.className = `num-part anim-${animType}`;
+            
+            const inner = document.createElement('span');
+            inner.className = 'digit-inner';
+            if (char === '#') {
+              inner.innerHTML = '<span class="mask-box"></span>';
+            } else {
+              inner.textContent = char;
+            }
+            numPart.appendChild(inner);
+            containerEl.appendChild(numPart);
+          }
+        }
+
+        // ミリ秒以下の部分（演出なし用）
+        if (milliPart.length > 0) {
+          const colon = document.createElement('span');
+          colon.className = 'colon-part';
+          colon.textContent = ':';
+          containerEl.appendChild(colon);
+
+          const msContainer = document.createElement('span');
+          msContainer.className = 'milli-container';
+          
+          for (let i = 0; i < milliPart.length; i++) {
+            const char = milliPart[i];
+            const numPart = document.createElement('span');
+            numPart.className = 'num-part'; // アニメーションクラスをつけない
+            const inner = document.createElement('span');
+            inner.className = 'digit-inner';
+            if (char === '#') {
+              inner.innerHTML = '<span class="mask-box"></span>';
+            } else {
+              inner.textContent = char;
+            }
+            numPart.appendChild(inner);
+            msContainer.appendChild(numPart);
+          }
+          containerEl.appendChild(msContainer);
+        }
+        return;
+      }
+
+      // 既存の要素の数値をスムーズに更新
+      let mainIdx = 0;
+      for (let i = 0; i < mainTimeStr.length; i++) {
+        const char = mainTimeStr[i];
+        if (char === ':') {
+          mainIdx++;
+          continue;
+        }
+
+        const numPart = containerEl.children[mainIdx];
+        if (numPart && numPart.classList.contains('num-part')) {
+          numPart.className = `num-part anim-${animType}`;
+          const inner = numPart.querySelector('.digit-inner');
+
+          const newContent = (char === '#') ? '<span class="mask-box"></span>' : char;
+          const currentContent = inner.innerHTML;
+
+          if (currentContent !== newContent && inner.textContent !== char) {
+            inner.innerHTML = newContent;
+
+            // アニメーション適用（有効時のみ）
+            if (isAnimEnabled) {
+              inner.classList.remove('animating');
+              void inner.offsetWidth; // リフロー発生でアニメーションリセット
+              inner.classList.add('animating');
+            }
+          }
+        }
+        mainIdx++;
+      }
+
+      // ミリ秒以下は演出なしで直接書き換え（動作激軽化）
+      if (milliPart.length > 0) {
+        const msContainer = containerEl.querySelector('.milli-container');
+        if (msContainer) {
+          let msCharIdx = 0;
+          for (let i = 0; i < milliPart.length; i++) {
+            const char = milliPart[i];
+            const numPart = msContainer.children[msCharIdx];
+            if (numPart) {
+              const inner = numPart.querySelector('.digit-inner');
+              const newContent = (char === '#') ? '<span class="mask-box"></span>' : char;
+              if (inner.innerHTML !== newContent) {
+                inner.innerHTML = newContent;
+              }
+            }
+            msCharIdx++;
+          }
+        }
+      }
+    }
+
+    // --- ダッシュボード構築 ---
+    function renderDashboard() {
+      const grid = document.getElementById('dashboard-grid');
+      grid.innerHTML = '';
+
+      dashboardCards.forEach((card, index) => {
+        const cardEl = document.createElement('div');
+        cardEl.className = `card ${card.size === 'wide' ? 'col-span-2' : ''}`;
+        cardEl.id = `${card.id}-card`;
+
+        let contentHtml = '';
+
+        if (card.type === 'sw') {
+          const sw = swData[card.id] || { name: card.title, running: false, elapsed: 0, startTimeStr: '--:--:--', mode: 'work', hide: false };
+          swData[card.id] = sw;
+
+          contentHtml = `
+            <div class="card-top-bar">
+              <span style="font-size: 0.75rem; color: var(--sub-text-color);">⏲ ストップウォッチ</span>
+              <div class="card-move-btns">
+                <button class="icon-btn" onclick="moveCard(${index}, -1)">←</button>
+                <button class="icon-btn" onclick="moveCard(${index}, 1)">→</button>
+                <button class="icon-btn" onclick="toggleCardSize('${card.id}')">⤢</button>
+                <button class="icon-btn" onclick="removeCard('${card.id}')" style="color:#ef4444;">✕</button>
+              </div>
+            </div>
+            <div class="card-header">
+              <span class="card-title">${escapeHtml(card.title)}</span>
+              <div class="controls-header">
+                <select id="${card.id}-mode" onchange="swData['${card.id}'].mode=this.value; saveAllData();">
+                  <option value="work" ${sw.mode==='work'?'selected':''}>作業</option>
+                  <option value="rest" ${sw.mode==='rest'?'selected':''}>休憩</option>
+                </select>
+                <label class="checkbox-label" style="margin-left: 8px;">
+                  <input type="checkbox" id="${card.id}-hide" ${sw.hide?'checked':''} onchange="swData['${card.id}'].hide=this.checked; updateDisplays(); saveAllData();"> 隠す
+                </label>
+              </div>
+            </div>
+            <div class="time-display" id="${card.id}-display"></div>
+            <div class="time-info-line">
+              <span>開始: <strong id="${card.id}-start-time">${sw.startTimeStr}</strong></span>
+            </div>
+            <div class="controls-body" style="margin-top: 4px;">
+              <button class="btn btn-toggle ${sw.running?'running':''}" id="${card.id}-toggle-btn" onclick="toggleSW('${card.id}')">${sw.running?'ストップ':'スタート'}</button>
+              <button class="btn btn-reset" onclick="resetSW('${card.id}')">リセット</button>
+            </div>
+          `;
+        } else if (card.type === 'timer') {
+          const t = timerData[card.id] || { name: card.title, running: false, isPristine: true, currentPhase: 'A', initialMsA: 300000, initialMsB: 60000, remainingMs: 300000, startTimeStr: '--:--:--', endTimeStr: '--:--:--', mode: 'work', type: 'normal', mute: false, hide: false, minA: 5, secA: 0, minB: 1, secB: 0, targetTime: '12:00' };
+          timerData[card.id] = t;
+
+          contentHtml = `
+            <div class="card-top-bar">
+              <span style="font-size: 0.75rem; color: var(--sub-text-color);">⏱ タイマー</span>
+              <div class="card-move-btns">
+                <button class="icon-btn" onclick="moveCard(${index}, -1)">←</button>
+                <button class="icon-btn" onclick="moveCard(${index}, 1)">→</button>
+                <button class="icon-btn" onclick="toggleCardSize('${card.id}')">⤢</button>
+                <button class="icon-btn" onclick="removeCard('${card.id}')" style="color:#ef4444;">✕</button>
+              </div>
+            </div>
+            <div class="card-header">
+              <div>
+                <span class="card-title">${escapeHtml(card.title)}</span>
+                <span id="${card.id}-status-badge" class="status-badge work" style="margin-left: 4px;">作業中</span>
+              </div>
+              <div class="controls-header">
+                <select id="${card.id}-mode" onchange="timerData['${card.id}'].mode=this.value; onTimerTypeOrModeChange('${card.id}');">
+                  <option value="work" ${t.mode==='work'?'selected':''}>作業</option>
+                  <option value="rest" ${t.mode==='rest'?'selected':''}>休憩</option>
+                </select>
+                <select id="${card.id}-type" onchange="timerData['${card.id}'].type=this.value; onTimerTypeOrModeChange('${card.id}');">
+                  <option value="normal" ${t.type==='normal'?'selected':''}>通常</option>
+                  <option value="target" ${t.type==='target'?'selected':''}>時刻指定</option>
+                  <option value="repeat" ${t.type==='repeat'?'selected':''}>リピート</option>
+                  <option value="interval" ${t.type==='interval'?'selected':''}>インターバル</option>
+                </select>
+                <label class="checkbox-label" style="margin-left: 4px;">
+                  <input type="checkbox" id="${card.id}-hide" ${t.hide?'checked':''} onchange="timerData['${card.id}'].hide=this.checked; updateDisplays(); saveAllData();"> 隠す
+                </label>
+              </div>
+            </div>
+            <div class="timer-setup-group">
+              <div class="timer-setup" id="${card.id}-setup-a">
+                <span id="${card.id}-label-a">設定:</span> 
+                <input type="number" id="${card.id}-min-a" min="0" value="${t.minA}" onchange="setTimerTime('${card.id}')">分 
+                <input type="number" id="${card.id}-sec-a" min="0" max="59" value="${t.secA}" onchange="setTimerTime('${card.id}')">秒
+              </div>
+              <div class="timer-setup" id="${card.id}-setup-target" style="display: none;">
+                <span>目標時刻:</span> 
+                <input type="time" id="${card.id}-target-time" value="${t.targetTime}" onchange="setTimerTime('${card.id}')">
+              </div>
+              <div class="timer-setup" id="${card.id}-setup-b" style="display: none;">
+                <span>休憩(B):</span> 
+                <input type="number" id="${card.id}-min-b" min="0" value="${t.minB}" onchange="setTimerTime('${card.id}')">分 
+                <input type="number" id="${card.id}-sec-b" min="0" max="59" value="${t.secB}" onchange="setTimerTime('${card.id}')">秒
+              </div>
+            </div>
+            <div class="time-display" id="${card.id}-display"></div>
+            <div class="time-info-line">
+              <span>開始: <strong id="${card.id}-start-time">${t.startTimeStr}</strong></span>
+              <span>終了予定: <strong id="${card.id}-end-time">${t.endTimeStr}</strong></span>
+            </div>
+            <div class="controls-body" style="margin-top: 4px;">
+              <button class="btn btn-toggle ${t.running?'running':''}" id="${card.id}-toggle-btn" onclick="toggleTimer('${card.id}')">${t.running?'ストップ':'スタート'}</button>
+              <button class="btn btn-reset" onclick="resetTimer('${card.id}')">リセット</button>
+              <label class="checkbox-label">
+                <input type="checkbox" id="${card.id}-mute" ${t.mute?'checked':''} onchange="timerData['${card.id}'].mute=this.checked; saveAllData();"> 消音
+              </label>
+            </div>
+            <div class="progress-container">
+              <div class="progress-info">
+                <span>進捗状況</span>
+                <span id="${card.id}-percent">経過: 0.0%</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="${card.id}-bar"></div>
+              </div>
+            </div>
+          `;
+        } else if (card.type === 'total') {
+          contentHtml = `
+            <div class="card-top-bar">
+              <span style="font-size: 0.75rem; color: var(--sub-text-color);">📊 集計</span>
+              <div class="card-move-btns">
+                <button class="icon-btn" onclick="moveCard(${index}, -1)">←</button>
+                <button class="icon-btn" onclick="moveCard(${index}, 1)">→</button>
+                <button class="icon-btn" onclick="removeCard('${card.id}')" style="color:#ef4444;">✕</button>
+              </div>
+            </div>
+            <div class="card-header">
+              <span class="card-title">${escapeHtml(card.title)}</span>
+              <div class="controls-header">
+                <button class="btn btn-reset" style="padding: 2px 6px;" onclick="resetTotalWorkTime()">合計リセット</button>
+                <label class="checkbox-label" style="margin-left: 8px;">
+                  <input type="checkbox" id="total-hide" onchange="updateDisplays(); saveAllData();"> 隠す
+                </label>
+              </div>
+            </div>
+            <div class="time-display" id="total-work-display" style="color: var(--accent-color);"></div>
+            <div class="note">※個別リセットを行っても合計値は保持されます</div>
+          `;
+        } else if (card.type === 'task') {
+          contentHtml = `
+            <div class="card-top-bar">
+              <span style="font-size: 0.75rem; color: var(--sub-text-color);">📋 スケジュール</span>
+              <div class="card-move-btns">
+                <button class="icon-btn" onclick="moveCard(${index}, -1)">←</button>
+                <button class="icon-btn" onclick="moveCard(${index}, 1)">→</button>
+                <button class="icon-btn" onclick="removeCard('${card.id}')" style="color:#ef4444;">✕</button>
+              </div>
+            </div>
+            <div class="card-header">
+              <span class="card-title">${escapeHtml(card.title)}</span>
+              <button class="btn btn-reset" style="padding: 2px 8px;" onclick="toggleTaskModal()">＋ タスク追加</button>
+            </div>
+            <div class="task-list" id="task-list-container"></div>
+          `;
+        }
+
+        cardEl.innerHTML = contentHtml;
+        grid.appendChild(cardEl);
+
+        if (card.type === 'timer') {
+          onTimerTypeOrModeChange(card.id);
+        }
+      });
+
+      renderTaskList();
+      updateBackgroundStatusBar();
+    }
+
+    function moveCard(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= dashboardCards.length) return;
+      const temp = dashboardCards[index];
+      dashboardCards[index] = dashboardCards[newIndex];
+      dashboardCards[newIndex] = temp;
+      renderDashboard();
+      saveAllData();
+    }
+
+    function toggleCardSize(cardId) {
+      const card = dashboardCards.find(c => c.id === cardId);
+      if (card) {
+        card.size = card.size === 'wide' ? 'normal' : 'wide';
+        renderDashboard();
+        saveAllData();
+      }
+    }
+
+    function removeCard(cardId) {
+      dashboardCards = dashboardCards.filter(c => c.id !== cardId);
+      renderDashboard();
+      saveAllData();
+    }
+
+    function addCard(type) {
+      const count = dashboardCards.filter(c => c.type === type).length + 1;
+      let id = type + Date.now();
+      let title = '';
+
+      if (type === 'sw') title = `ストップウォッチ ${count}`;
+      else if (type === 'timer') title = `タイマー ${count}`;
+      else if (type === 'task') title = `登録済みタスク一覧`;
+      else if (type === 'total') title = `現在の作業時間合計`;
+
+      dashboardCards.push({ id, type, title, size: 'normal' });
+      toggleAddCardModal();
+      renderDashboard();
+      saveAllData();
+    }
+
+    function resetLayout() {
+      if (confirm('ダッシュボードのレイアウトを初期状態に戻しますか？')) {
+        dashboardCards = JSON.parse(JSON.stringify(DEFAULT_DASHBOARD_CARDS));
+        renderDashboard();
+        saveAllData();
+      }
+    }
+
+    function resetAllRunningTasks() {
+      if (confirm('稼働中・計測中のすべてのタイマーおよびストップウォッチを停止・リセットしますか？')) {
+        for (let id in swData) resetSW(id);
+        for (let id in timerData) resetTimer(id);
+        renderDashboard();
+        saveAllData();
+      }
+    }
+
+    function restoreBackgroundCard(id, type) {
+      if (!dashboardCards.some(c => c.id === id)) {
+        const title = type === 'sw' ? (swData[id]?.name || 'ストップウォッチ') : (timerData[id]?.name || 'タイマー');
+        dashboardCards.push({ id, type, title, size: 'normal' });
+        renderDashboard();
+        saveAllData();
+      }
+      
+      setTimeout(() => {
+        const cardEl = document.getElementById(`${id}-card`);
+        if (cardEl) {
+          cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          cardEl.style.boxShadow = '0 0 0 3px var(--accent-color)';
+          setTimeout(() => { cardEl.style.boxShadow = ''; }, 1500);
+        }
+      }, 50);
+    }
+
+    function updateBackgroundStatusBar() {
+      const bgBar = document.getElementById('bg-status-bar');
+      const bgList = document.getElementById('bg-status-list');
+      if (!bgBar || !bgList) return;
+      bgList.innerHTML = '';
+
+      const runningBackgroundItems = [];
+
+      for (let id in swData) {
+        if (swData[id].running && !dashboardCards.some(c => c.id === id)) {
+          runningBackgroundItems.push({ id, type: 'sw', name: swData[id].name || id });
+        }
+      }
+
+      for (let id in timerData) {
+        if (timerData[id].running && !dashboardCards.some(c => c.id === id)) {
+          runningBackgroundItems.push({ id, type: 'timer', name: timerData[id].name || id });
+        }
+      }
+
+      if (runningBackgroundItems.length > 0) {
+        bgBar.style.display = 'flex';
+        runningBackgroundItems.forEach(item => {
+          const itemEl = document.createElement('div');
+          itemEl.className = 'bg-status-item';
+          itemEl.onclick = () => restoreBackgroundCard(item.id, item.type);
+          itemEl.innerHTML = `
+            <div class="bg-status-pulse"></div>
+            <span>${escapeHtml(item.name)} (表示する ↗)</span>
+          `;
+          bgList.appendChild(itemEl);
+        });
+      } else {
+        bgBar.style.display = 'none';
+      }
+    }
+
+    // --- モーダル制御 ---
+    function toggleAddCardModal() { document.getElementById('add-card-modal').classList.toggle('active'); }
+    function closeAddCardModal(event) { if (event.target.id === 'add-card-modal') toggleAddCardModal(); }
+
+    function toggleTaskModal() { document.getElementById('task-modal').classList.toggle('active'); }
+    function closeTaskModal(event) { if (event.target.id === 'task-modal') toggleTaskModal(); }
+
+    // --- タスク管理 ---
+    function addNewTask() {
+      const nameInput = document.getElementById('task-name');
+      const startInput = document.getElementById('task-start-time');
+      const endInput = document.getElementById('task-end-time');
+      const repeatSelect = document.getElementById('task-repeat');
+
+      const name = nameInput.value.trim();
+      if (!name) { alert('タスク名を入力してください。'); return; }
+
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+
+      taskList.push({
+        id: Date.now(),
+        name: name,
+        startTime: startInput.value,
+        endTime: endInput.value,
+        repeat: repeatSelect.value,
+        dateStr: dateStr
+      });
+
+      nameInput.value = '';
+      toggleTaskModal();
+      renderTaskList();
+      updateClock();
+      saveAllData();
+    }
+
+    function deleteTask(id) {
+      taskList = taskList.filter(task => task.id !== id);
+      renderTaskList();
+      updateClock();
+      saveAllData();
+    }
+
+    function renderTaskList() {
+      const container = document.getElementById('task-list-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (taskList.length === 0) {
+        container.innerHTML = '<div style="font-size:0.75rem; color:var(--sub-text-color); text-align:center; margin-top:10px;">登録中のタスクはありません</div>';
+        return;
+      }
+
+      taskList.forEach(task => {
+        const item = document.createElement('div');
+        item.className = 'task-item';
+        const repeatLabel = task.repeat === 'daily' ? '毎日' : '今日のみ';
+
+        item.innerHTML = `
+          <div class="task-item-info">
+            <span class="task-item-title">${escapeHtml(task.name)}</span>
+            <span class="task-item-time">${task.startTime}〜${task.endTime} (${repeatLabel})</span>
+          </div>
+          <button class="task-delete-btn" onclick="deleteTask(${task.id})">✕</button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
+    }
+
+    function formatMS(ms, precision) {
+      if (ms < 0) ms = 0;
+      const h = String(Math.floor(ms / 3600000)).padStart(2, '0');
+      const m = String(Math.floor((ms % 3600000) / 60000)).padStart(2, '0');
+      const s = String(Math.floor((ms % 60000) / 1000)).padStart(2, '0');
+      let baseStr = `${h}:${m}:${s}`;
+
+      if (precision > 0) {
+        let msStr = String(ms % 1000).padStart(3, '0');
+        msStr = msStr.substring(0, precision);
+        baseStr += `:${msStr}`;
+      }
+      return baseStr;
+    }
+
+    function playBeep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.8);
+        osc.stop(ctx.currentTime + 0.8);
+      } catch (e) { console.error(e); }
+    }
+
+    function flashCardRed(id) {
+      const card = document.getElementById(`${id}-card`);
+      if (!card) return;
+      card.classList.remove('flash-red');
+      void card.offsetWidth;
+      card.classList.add('flash-red');
+      setTimeout(() => { card.classList.remove('flash-red'); }, 3000);
+    }
+
+    // --- メインループ ---
+    function gameLoop() {
+      const now = Date.now();
+      const delta = now - lastTickTime;
+      lastTickTime = now;
+
+      let isAnyWorkActive = false;
+
+      for (let id in swData) {
+        const sw = swData[id];
+        if (sw.running) {
+          sw.elapsed += delta;
+          if (sw.mode === 'work') isAnyWorkActive = true;
+        }
+      }
+
+      for (let id in timerData) {
+        const t = timerData[id];
+        if (t.running) {
+          t.remainingMs -= delta;
+
+          const isWork = (t.type === 'interval') ? (t.currentPhase === 'A') : (t.mode === 'work');
+          if (isWork) isAnyWorkActive = true;
+
+          if (t.remainingMs <= 0) {
+            if (t.mute) flashCardRed(id);
+            else playBeep();
+
+            if (t.type === 'normal' || t.type === 'target') {
+              t.remainingMs = 0;
+              toggleTimer(id);
+            } else if (t.type === 'repeat') {
+              t.remainingMs = t.initialMsA;
+              recalculateTimerEndTime(id);
+            } else if (t.type === 'interval') {
+              if (t.currentPhase === 'A') {
+                t.currentPhase = 'B';
+                t.remainingMs = t.initialMsB;
+              } else {
+                t.currentPhase = 'A';
+                t.remainingMs = t.initialMsA;
+              }
+              recalculateTimerEndTime(id);
+              updateBadge(id);
+            }
+          }
+        }
+      }
+
+      if (isAnyWorkActive) accumulatedWorkMs += delta;
+
+      updateDisplays();
+      updateBackgroundStatusBar();
+      requestAnimationFrame(gameLoop);
+    }
+
+    setInterval(() => { saveAllData(); }, 1000);
+
+    // --- ストップウォッチ ---
+    function toggleSW(id) {
+      const sw = swData[id];
+      if (!sw) return;
+      sw.running = !sw.running;
+
+      const btn = document.getElementById(`${id}-toggle-btn`);
+      if (sw.running) {
+        if (btn) { btn.textContent = 'ストップ'; btn.classList.add('running'); }
+        if (sw.elapsed === 0 || sw.startTimeStr === '--:--:--') {
+          sw.startTimeStr = formatTimeString(new Date());
+          const stEl = document.getElementById(`${id}-start-time`);
+          if (stEl) stEl.textContent = sw.startTimeStr;
+        }
+      } else {
+        if (btn) { btn.textContent = 'スタート'; btn.classList.remove('running'); }
+      }
+      saveAllData();
+    }
+
+    function resetSW(id) {
+      const sw = swData[id];
+      if (!sw) return;
+      if (sw.running) toggleSW(id);
+      sw.elapsed = 0;
+      sw.startTimeStr = '--:--:--';
+      const stEl = document.getElementById(`${id}-start-time`);
+      if (stEl) stEl.textContent = sw.startTimeStr;
+      updateDisplays();
+      saveAllData();
+    }
+
+    // --- タイマー ---
+    function onTimerTypeOrModeChange(id) {
+      const t = timerData[id];
+      if (!t) return;
+
+      const typeEl = document.getElementById(`${id}-type`);
+      const modeEl = document.getElementById(`${id}-mode`);
+      if (typeEl) t.type = typeEl.value;
+      if (modeEl) t.mode = modeEl.value;
+
+      const setupA = document.getElementById(`${id}-setup-a`);
+      const setupTarget = document.getElementById(`${id}-setup-target`);
+      const setupB = document.getElementById(`${id}-setup-b`);
+      const labelA = document.getElementById(`${id}-label-a`);
+
+      if (!setupA) return;
+
+      if (t.type === 'target') {
+        setupA.style.display = 'none';
+        setupTarget.style.display = 'flex';
+        setupB.style.display = 'none';
+        modeEl.style.display = 'inline-block';
+      } else if (t.type === 'interval') {
+        setupA.style.display = 'flex';
+        setupTarget.style.display = 'none';
+        setupB.style.display = 'flex';
+        labelA.textContent = '作業(A):';
+        modeEl.style.display = 'none';
+      } else {
+        setupA.style.display = 'flex';
+        setupTarget.style.display = 'none';
+        setupB.style.display = 'none';
+        labelA.textContent = '設定:';
+        modeEl.style.display = 'inline-block';
+      }
+      setTimerTime(id);
+    }
+
+    function calculateMsToTargetTime(targetTimeStr) {
+      if (!targetTimeStr) return 0;
+      const [targetH, targetM] = targetTimeStr.split(':').map(Number);
+      const now = new Date();
+      const targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), targetH, targetM, 0, 0);
+      if (targetDate.getTime() <= now.getTime()) {
+        targetDate.setDate(targetDate.getDate() + 1);
+      }
+      return targetDate.getTime() - now.getTime();
+    }
+
+    function setTimerTime(id) {
+      const t = timerData[id];
+      if (!t) return;
+
+      const minAEl = document.getElementById(`${id}-min-a`);
+      const secAEl = document.getElementById(`${id}-sec-a`);
+      const minBEl = document.getElementById(`${id}-min-b`);
+      const secBEl = document.getElementById(`${id}-sec-b`);
+      const targetEl = document.getElementById(`${id}-target-time`);
+
+      if (minAEl) t.minA = parseInt(minAEl.value) || 0;
+      if (secAEl) t.secA = parseInt(secAEl.value) || 0;
+      if (minBEl) t.minB = parseInt(minBEl.value) || 0;
+      if (secBEl) t.secB = parseInt(secBEl.value) || 0;
+      if (targetEl) t.targetTime = targetEl.value;
+
+      if (t.type === 'target') {
+        const diffMs = calculateMsToTargetTime(t.targetTime);
+        t.initialMsA = diffMs;
+        if (!t.running && t.isPristine) t.remainingMs = diffMs;
+      } else {
+        t.initialMsA = (t.minA * 60 + t.secA) * 1000;
+        t.initialMsB = (t.minB * 60 + t.secB) * 1000;
+        if (!t.running && t.isPristine) {
+          t.currentPhase = 'A';
+          t.remainingMs = t.initialMsA;
+        }
+      }
+      
+      updateBadge(id);
+      updateDisplays();
+      saveAllData();
+    }
+
+    function setInputsDisabled(id, disabled) {
+      const elIds = [`${id}-min-a`, `${id}-sec-a`, `${id}-target-time`, `${id}-min-b`, `${id}-sec-b`];
+      elIds.forEach(eid => {
+        const el = document.getElementById(eid);
+        if (el) el.disabled = disabled;
+      });
+    }
+
+    function updateBadge(id) {
+      const t = timerData[id];
+      const badge = document.getElementById(`${id}-status-badge`);
+      if (!t || !badge) return;
+
+      const isWork = (t.type === 'interval') ? (t.currentPhase === 'A') : (t.mode === 'work');
+      if (isWork) {
+        badge.textContent = '作業中';
+        badge.className = 'status-badge work';
+      } else {
+        badge.textContent = '休憩中';
+        badge.className = 'status-badge rest';
+      }
+    }
+
+    function recalculateTimerEndTime(id) {
+      const t = timerData[id];
+      if (!t) return;
+      const now = new Date();
+      const endDate = new Date(now.getTime() + t.remainingMs);
+      t.endTimeStr = formatTimeString(endDate);
+      const endEl = document.getElementById(`${id}-end-time`);
+      if (endEl) endEl.textContent = t.endTimeStr;
+    }
+
+    function toggleTimer(id) {
+      const t = timerData[id];
+      if (!t) return;
+
+      const btn = document.getElementById(`${id}-toggle-btn`);
+
+      if (!t.running) {
+        if (t.type === 'target') {
+          const diffMs = calculateMsToTargetTime(t.targetTime);
+          t.initialMsA = diffMs;
+          t.remainingMs = diffMs;
+        }
+
+        if (t.remainingMs <= 0) return;
+
+        t.running = true;
+        t.isPristine = false;
+        if (btn) { btn.textContent = 'ストップ'; btn.classList.add('running'); }
+        setInputsDisabled(id, true);
+
+        const now = new Date();
+        t.startTimeStr = formatTimeString(now);
+        const endDate = new Date(now.getTime() + t.remainingMs);
+        t.endTimeStr = formatTimeString(endDate);
+
+        const stEl = document.getElementById(`${id}-start-time`);
+        const etEl = document.getElementById(`${id}-end-time`);
+        if (stEl) stEl.textContent = t.startTimeStr;
+        if (etEl) etEl.textContent = t.endTimeStr;
+      } else {
+        t.running = false;
+        if (btn) { btn.textContent = 'スタート'; btn.classList.remove('running'); }
+      }
+      saveAllData();
+    }
+
+    function resetTimer(id) {
+      const t = timerData[id];
+      if (!t) return;
+
+      if (t.running) {
+        t.running = false;
+        const btn = document.getElementById(`${id}-toggle-btn`);
+        if (btn) { btn.textContent = 'スタート'; btn.classList.remove('running'); }
+      }
+      t.isPristine = true;
+      t.startTimeStr = '--:--:--';
+      t.endTimeStr = '--:--:--';
+
+      const stEl = document.getElementById(`${id}-start-time`);
+      const etEl = document.getElementById(`${id}-end-time`);
+      if (stEl) stEl.textContent = t.startTimeStr;
+      if (etEl) etEl.textContent = t.endTimeStr;
+
+      setInputsDisabled(id, false);
+      setTimerTime(id);
+    }
+
+    function updateProgressBar(id) {
+      const t = timerData[id];
+      const barFill = document.getElementById(`${id}-bar`);
+      const percentEl = document.getElementById(`${id}-percent`);
+      if (!t || !barFill || !percentEl) return;
+
+      const totalMs = (t.currentPhase === 'A') ? t.initialMsA : t.initialMsB;
+      let ratio = 0;
+      if (totalMs > 0) {
+        const elapsed = totalMs - t.remainingMs;
+        ratio = Math.min(Math.max(elapsed / totalMs, 0), 1);
+      }
+
+      const percentStr = (ratio * 100).toFixed(1);
+      percentEl.textContent = `経過: ${percentStr}%`;
+      barFill.style.width = `${percentStr}%`;
+
+      let color = '#3b82f6';
+      if (ratio > 0.85) color = '#ef4444';
+      else if (ratio > 0.6) color = '#eab308';
+      else if (ratio > 0.33) color = '#22c55e';
+      barFill.style.backgroundColor = color;
+    }
+
+    function updateDisplays() {
+      const maskStr = precisionMask(swPrecision);
+      const timerMaskStr = precisionMask(timerPrecision);
+
+      dashboardCards.forEach(card => {
+        if (card.type === 'sw') {
+          const sw = swData[card.id];
+          const displayEl = document.getElementById(`${card.id}-display`);
+          if (displayEl && sw) {
+            const swStr = sw.hide ? maskStr : formatMS(sw.elapsed, swPrecision);
+            updateTimeContainer(displayEl, swStr);
+          }
+        } else if (card.type === 'timer') {
+          const t = timerData[card.id];
+          const displayEl = document.getElementById(`${card.id}-display`);
+          if (displayEl && t) {
+            const tStr = t.hide ? timerMaskStr : formatMS(t.remainingMs, timerPrecision);
+            updateTimeContainer(displayEl, tStr);
+            updateProgressBar(card.id);
+          }
+        } else if (card.type === 'total') {
+          const totalEl = document.getElementById('total-work-display');
+          const totalHide = document.getElementById('total-hide')?.checked;
+          if (totalEl) {
+            const totalStr = totalHide ? maskStr : formatMS(accumulatedWorkMs, swPrecision);
+            updateTimeContainer(totalEl, totalStr);
+          }
+        }
+      });
+    }
+
+    function precisionMask(prec) {
+      let s = '##:##:##';
+      if (prec > 0) s += ':' + '#'.repeat(prec);
+      return s;
+    }
+
+    function resetTotalWorkTime() {
+      accumulatedWorkMs = 0;
+      updateDisplays();
+      saveAllData();
+    }
+
+    // --- ドロワー ＆ 設定 ---
+    function toggleDrawer() {
+      document.getElementById('drawer-overlay').classList.toggle('active');
+      document.getElementById('drawer-menu').classList.toggle('active');
+    }
+
+    function setFont(fontFamily, element) {
+      document.documentElement.style.setProperty('--app-font-family', fontFamily);
+      document.querySelectorAll('.font-card').forEach(el => el.classList.remove('active'));
+      if (element) element.classList.add('active');
+      saveAllData();
+    }
+
+    function updateFontScale(val) {
+      document.documentElement.style.setProperty('--app-font-scale', val);
+      saveAllData();
+    }
+
+    function updateFontWeight(val) {
+      document.documentElement.style.setProperty('--app-font-weight', val);
+      saveAllData();
+    }
+
+    function updatePrecision(type, val) {
+      if (type === 'sw') {
+        swPrecision = parseInt(val);
+        document.getElementById('sw-precision-val').textContent = `${swPrecision}桁`;
+      } else {
+        timerPrecision = parseInt(val);
+        document.getElementById('timer-precision-val').textContent = `${timerPrecision}桁`;
+      }
+      updateDisplays();
+      saveAllData();
+    }
+
+    function setTheme(themeMode) {
+      if (themeMode === 'system') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', themeMode);
+      }
+      saveAllData();
+    }
+
+    function toggleAccordion(id, btn) {
+      const content = document.getElementById(id);
+      const icon = btn.querySelector('.acc-icon');
+      const isActive = content.classList.contains('active');
+      
+      if (isActive) {
+        content.classList.remove('active');
+        icon.textContent = '∨';
+      } else {
+        content.classList.add('active');
+        icon.textContent = '∧';
+      }
+    }
+
+    function updateCustomColor(cssVar, hex) {
+      document.documentElement.style.setProperty(cssVar, hex);
+      saveAllData();
+    }
+
+    // --- ローカルストレージ保存・復元 ---
+    const STORAGE_KEY = 'multi_timer_clock_settings_v11';
+
+    function saveAllData() {
+      const activeFontEl = document.querySelector('.font-card.active');
+      const activeFontIdx = Array.from(document.querySelectorAll('.font-card')).indexOf(activeFontEl);
+
+      const saveData = {
+        savedAt: Date.now(),
+        accumulatedWorkMs: accumulatedWorkMs,
+        swData: swData,
+        timerData: timerData,
+        taskList: taskList,
+        dashboardCards: dashboardCards,
+        clockSettings: {
+          showTime: document.getElementById('show-time-cb').checked,
+          showDate: document.getElementById('show-date-cb').checked,
+          secMode: document.querySelector('input[name="sec-mode"]:checked')?.value || 'show'
+        },
+        animSettings: {
+          enable: document.getElementById('anim-enable-cb').checked,
+          type: document.getElementById('anim-type-select').value
+        },
+        settings: {
+          swPrecision: swPrecision,
+          timerPrecision: timerPrecision,
+          fontScale: document.getElementById('font-scale-slider').value,
+          fontWeight: document.getElementById('font-weight-slider').value,
+          activeFontIdx: activeFontIdx,
+          theme: document.querySelector('input[name="theme"]:checked')?.value || 'light',
+          customTextColor: getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim(),
+          customBtnColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-btn-bg').trim(),
+          customBgColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim()
+        }
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
+    }
+
+    function loadAllData() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        renderDashboard();
+        return;
+      }
+
+      try {
+        const data = JSON.parse(raw);
+        const now = Date.now();
+        const elapsedSinceSave = now - (data.savedAt || now);
+
+        accumulatedWorkMs = data.accumulatedWorkMs || 0;
+        taskList = data.taskList || [];
+        if (data.dashboardCards) dashboardCards = data.dashboardCards;
+
+        if (data.clockSettings) {
+          document.getElementById('show-time-cb').checked = data.clockSettings.showTime ?? true;
+          document.getElementById('show-date-cb').checked = data.clockSettings.showDate ?? true;
+          const secRadio = document.querySelector(`input[name="sec-mode"][value="${data.clockSettings.secMode}"]`);
+          if (secRadio) secRadio.checked = true;
+        }
+
+        if (data.animSettings) {
+          document.getElementById('anim-enable-cb').checked = data.animSettings.enable ?? true;
+          document.getElementById('anim-type-select').value = data.animSettings.type || 'slide';
+        }
+
+        if (data.settings) {
+          const s = data.settings;
+          if (s.swPrecision !== undefined) {
+            swPrecision = s.swPrecision;
+            document.getElementById('sw-precision-slider').value = swPrecision;
+            document.getElementById('sw-precision-val').textContent = `${swPrecision}桁`;
+          }
+          if (s.timerPrecision !== undefined) {
+            timerPrecision = s.timerPrecision;
+            document.getElementById('timer-precision-slider').value = timerPrecision;
+            document.getElementById('timer-precision-val').textContent = `${timerPrecision}桁`;
+          }
+          if (s.fontScale) {
+            document.getElementById('font-scale-slider').value = s.fontScale;
+            updateFontScale(s.fontScale);
+          }
+          if (s.fontWeight) {
+            document.getElementById('font-weight-slider').value = s.fontWeight;
+            updateFontWeight(s.fontWeight);
+          }
+          if (s.activeFontIdx !== undefined && s.activeFontIdx >= 0) {
+            const fontCards = document.querySelectorAll('.font-card');
+            if (fontCards[s.activeFontIdx]) fontCards[s.activeFontIdx].click();
+          }
+          if (s.theme) {
+            const radio = document.querySelector(`input[name="theme"][value="${s.theme}"]`);
+            if (radio) radio.checked = true;
+            setTheme(s.theme);
+          }
+        }
+
+        if (data.swData) {
+          for (let id in data.swData) {
+            swData[id] = data.swData[id];
+            if (swData[id].running) {
+              swData[id].elapsed += elapsedSinceSave;
+            }
+          }
+        }
+
+        if (data.timerData) {
+          for (let id in data.timerData) {
+            timerData[id] = data.timerData[id];
+            if (timerData[id].running) {
+              timerData[id].remainingMs -= elapsedSinceSave;
+              if (timerData[id].remainingMs < 0) timerData[id].remainingMs = 0;
+            }
+          }
+        }
+
+        renderDashboard();
+        updateClock();
+        updateDisplays();
+      } catch (e) {
+        console.error('Failed to load storage:', e);
+        renderDashboard();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadAllData();
+      lastTickTime = Date.now();
+      requestAnimationFrame(gameLoop);
+    });
+  </script>
+</body>
+</html>
