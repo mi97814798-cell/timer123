@@ -597,21 +597,6 @@
         <label class="radio-label"><input type="checkbox" id="show-time-cb" checked onchange="updateClockSettings()"> 時刻を表示</label>
         <label class="radio-label"><input type="checkbox" id="show-date-cb" checked onchange="updateClockSettings()"> 日付を表示</label>
       </div>
-
-      <span class="setting-label" style="font-size:0.82rem; margin-top: 6px;">・時間表示形式</span>
-      <div class="radio-group" style="margin-bottom: 8px;">
-        <label class="radio-label"><input type="radio" name="hour-mode" value="24" checked onclick="updateClockSettings()"> 24時間表示</label>
-        <label class="radio-label"><input type="radio" name="hour-mode" value="12" onclick="updateClockSettings()"> 12時間表示</label>
-      </div>
-
-      <div id="period-style-group" style="margin-bottom: 8px; display: none;">
-        <span class="setting-label" style="font-size:0.82rem;">・午前・午後 / AM・PM 表記</span>
-        <div class="radio-group">
-          <label class="radio-label"><input type="radio" name="period-style" value="ja" checked onclick="updateClockSettings()"> 午前 / 午後</label>
-          <label class="radio-label"><input type="radio" name="period-style" value="en" onclick="updateClockSettings()"> AM / PM</label>
-        </div>
-      </div>
-
       <span class="setting-label" style="font-size:0.82rem; margin-top: 6px;">・現在時刻の秒表示</span>
       <div class="radio-group">
         <label class="radio-label"><input type="radio" name="sec-mode" value="show" checked onclick="updateClockSettings()"> 秒あり</label>
@@ -679,34 +664,38 @@
     <div class="setting-section">
       <span class="setting-label">・文字の間隔 (すき間)</span>
       <div class="range-group">
-        <input type="range" id="char-gap-slider" min="0" max="10" step="1" value="0" oninput="updateCharGap(this.value)">
-        <span id="char-gap-val" style="font-size:0.85rem; font-weight:bold; width:35px; text-align:right;">0px</span>
+        <input type="range" id="char-gap-slider" min="-6" max="25" step="1" value="0" oninput="updateCharGap(this.value)">
+        <span id="char-gap-val" style="font-size:0.85rem; font-weight:bold; width: 45px; text-align: right;">0px</span>
       </div>
     </div>
 
     <div class="setting-section">
-      <span class="setting-label">・全体のサイズ (拡大/縮小)</span>
+      <span class="setting-label">・フォントサイズ</span>
       <div class="range-group">
-        <input type="range" id="font-scale-slider" min="0.7" max="1.5" step="0.05" value="1" oninput="updateFontScale(this.value)">
+        <input type="range" id="font-scale-slider" min="0.6" max="2.8" step="0.05" value="1" oninput="updateFontScale(this.value)">
       </div>
     </div>
 
     <div class="setting-section">
-      <span class="setting-label">・文字の太さ</span>
+      <span class="setting-label">・フォント太さ</span>
       <div class="range-group">
-        <input type="range" id="font-weight-slider" min="100" max="900" step="100" value="700" oninput="updateFontWeight(this.value)">
+        <input type="range" id="font-weight-slider" min="300" max="900" step="100" value="700" oninput="updateFontWeight(this.value)">
       </div>
     </div>
 
     <div class="setting-section">
-      <span class="setting-label">・ミリ秒表示桁数 (精度)</span>
+      <span class="setting-label">・ストップウォッチ 精度</span>
       <div class="range-group">
-        <span style="font-size:0.8rem;">ストップウォッチ:</span>
+        <span style="font-size:0.8rem;">小数点:</span>
         <input type="range" id="sw-precision-slider" min="0" max="3" step="1" value="3" oninput="updatePrecision('sw', this.value)">
         <span id="sw-precision-val" style="font-size:0.85rem; font-weight:bold;">3桁</span>
       </div>
+    </div>
+
+    <div class="setting-section">
+      <span class="setting-label">・タイマー 精度</span>
       <div class="range-group">
-        <span style="font-size:0.8rem;">タイマー:</span>
+        <span style="font-size:0.8rem;">小数点:</span>
         <input type="range" id="timer-precision-slider" min="0" max="3" step="1" value="3" oninput="updatePrecision('timer', this.value)">
         <span id="timer-precision-val" style="font-size:0.85rem; font-weight:bold;">3桁</span>
       </div>
@@ -739,57 +728,46 @@
         <input type="color" id="color-bg" value="#f8fafc" onchange="updateCustomColor('--bg-color', this.value)">
       </div>
     </div>
+
   </div>
 
   <script>
     let accumulatedWorkMs = 0;
     let lastTickTime = Date.now();
+
     let swPrecision = 3;
     let timerPrecision = 3;
     let blindDigitsCount = 0;
     let taskList = [];
 
     const DEFAULT_DASHBOARD_CARDS = [
-      { id: 't1', type: 'timer', title: 'ポモドーロ タイマー 1', width: '380px', height: '260px' },
-      { id: 't2', type: 'timer', title: 'タイマー 2', width: '380px', height: '260px' },
-      { id: 'sw1', type: 'sw', title: 'ストップウォッチ 1', width: '350px', height: '220px' },
-      { id: 'sw2', type: 'sw', title: 'ストップウォッチ 2', width: '350px', height: '220px' },
-      { id: 'taskCard', type: 'task', title: '登録済みタスク一覧', width: '350px', height: '220px' },
-      { id: 'totalCard', type: 'total', title: '現在の作業時間合計', width: '350px', height: '180px' }
+      { id: 'sw1', type: 'sw', title: 'ストップウォッチ 1', width: '350px', height: '250px' },
+      { id: 'total1', type: 'total', title: '現在の作業時間合計', width: '350px', height: '250px' },
+      { id: 'task1', type: 'task', title: '登録済みタスク一覧', width: '350px', height: '250px' },
+      { id: 't1', type: 'timer', title: 'タイマー 1', width: '350px', height: '250px' },
+      { id: 't2', type: 'timer', title: 'タイマー 2', width: '350px', height: '250px' }
     ];
 
     let dashboardCards = JSON.parse(JSON.stringify(DEFAULT_DASHBOARD_CARDS));
 
-    let swData = {
-      sw1: { name: 'ストップウォッチ 1', running: false, elapsed: 0, mode: 'work', hide: false, displayFormat: 'standard', startTimeStr: '--:--:--' },
-      sw2: { name: 'ストップウォッチ 2', running: false, elapsed: 0, mode: 'work', hide: false, displayFormat: 'standard', startTimeStr: '--:--:--' }
-    };
-
-    let timerData = {
-      t1: {
-        name: 'ポモドーロ タイマー 1', running: false, isPristine: true, currentPhase: 'A',
-        initialMsA: 1500000, initialMsB: 300000, remainingMs: 1500000, mode: 'work', type: 'duration',
-        unitA: 'min_sec', valA1: 0, valA2: 25, valA3: 0, unitB: 'min_sec', valB1: 0, valB2: 5, valB3: 0,
-        targetDate: '', targetTime: '12:00', mute: false, autoSwitch: true, repeatCount: 4, currentRepeat: 1,
-        startTimeStr: '--:--:--', endTimeStr: '--:--:--'
-      },
-      t2: {
-        name: 'タイマー 2', running: false, isPristine: true, currentPhase: 'A',
-        initialMsA: 1500000, initialMsB: 300000, remainingMs: 1500000, mode: 'work', type: 'duration',
-        unitA: 'min_sec', valA1: 0, valA2: 25, valA3: 0, unitB: 'min_sec', valB1: 0, valB2: 5, valB3: 0,
-        targetDate: '', targetTime: '12:00', mute: false, autoSwitch: false, repeatCount: 1, currentRepeat: 1,
-        startTimeStr: '--:--:--', endTimeStr: '--:--:--'
-      }
-    };
-
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+    function getTodayYMD() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
     }
+
+    const swData = {
+      sw1: { name: 'ストップウォッチ 1', running: false, elapsed: 0, startTimeStr: '--:--:--', mode: 'work', hide: false, displayFormat: 'standard' }
+    };
+
+    const timerData = {
+      t1: { name: 'タイマー 1', running: false, isPristine: true, currentPhase: 'A', initialMsA: 300000, initialMsB: 60000, remainingMs: 300000, startTimeStr: '--:--:--', endTimeStr: '--:--:--', mode: 'work', type: 'normal', mute: false, hide: false, unitA: 'min_sec', valA1: 5, valA2: 0, valA3: 0, unitB: 'min_sec', valB1: 1, valB2: 0, valB3: 0, targetDate: getTodayYMD(), targetTime: '12:00', displayFormat: 'standard' },
+      t2: { name: 'タイマー 2', running: false, isPristine: true, currentPhase: 'A', initialMsA: 1500000, initialMsB: 300000, remainingMs: 1500000, startTimeStr: '--:--:--', endTimeStr: '--:--:--', mode: 'work', type: 'normal', mute: false, hide: false, unitA: 'min_sec', valA1: 25, valA2: 0, valA3: 0, unitB: 'min_sec', valB1: 5, valB2: 0, valB3: 0, targetDate: getTodayYMD(), targetTime: '18:00', displayFormat: 'standard' }
+    };
+
+    const weekDays = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
 
     function formatTimeString(date) {
       const hours = String(date.getHours()).padStart(2, '0');
@@ -840,144 +818,85 @@
       }
     }
 
-    function updateClockSettings() {
-      const showTime = document.getElementById('show-time-cb').checked;
-      const showDate = document.getElementById('show-date-cb').checked;
-      const hourMode = document.querySelector('input[name="hour-mode"]:checked')?.value || '24';
-
-      const clockTimeEl = document.getElementById('clock-time');
-      const clockDateEl = document.getElementById('clock-date');
-      const periodGroup = document.getElementById('period-style-group');
-
-      clockTimeEl.style.display = showTime ? 'inline-flex' : 'none';
-      clockDateEl.style.display = showDate ? 'block' : 'none';
-
-      if (periodGroup) {
-        periodGroup.style.display = (hourMode === '12') ? 'block' : 'none';
-      }
-
-      updateClock();
-      saveAllData();
-    }
-
     function updateClock() {
       const now = new Date();
       const showTime = document.getElementById('show-time-cb').checked;
       const showDate = document.getElementById('show-date-cb').checked;
       const secMode = document.querySelector('input[name="sec-mode"]:checked')?.value || 'show';
-      const hourMode = document.querySelector('input[name="hour-mode"]:checked')?.value || '24';
-      const periodStyle = document.querySelector('input[name="period-style"]:checked')?.value || 'ja';
 
       const clockTimeEl = document.getElementById('clock-time');
       const clockDateEl = document.getElementById('clock-date');
 
-      if (showDate) {
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const date = String(now.getDate()).padStart(2, '0');
-        const days = ['日', '月', '火', '水', '木', '金', '土'];
-        const day = days[now.getDay()];
-        clockDateEl.textContent = `${year}/${month}/${date} (${day})`;
+      if (showTime) {
+        clockTimeEl.style.display = 'inline-flex';
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+
+        if (secMode === 'show') {
+          const seconds = String(now.getSeconds()).padStart(2, '0');
+          updateTimeContainer(clockTimeEl, `${hours}:${minutes}:${seconds}`, false, false, 0);
+        } else {
+          updateTimeContainer(clockTimeEl, `${hours}:${minutes}`, true, false, 0);
+        }
+      } else {
+        clockTimeEl.style.display = 'none';
       }
 
-      if (showTime) {
-        let h = now.getHours();
-        let periodStr = '';
-
-        if (hourMode === '12') {
-          const isPm = h >= 12;
-          if (periodStyle === 'ja') {
-            periodStr = isPm ? '午後 ' : '午前 ';
-          } else {
-            periodStr = isPm ? 'PM ' : 'AM ';
-          }
-          h = h % 12;
-          if (h === 0) h = 12;
-        }
-
-        const hours = String(h).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-
-        let timeStr = '';
-        if (secMode === 'show') {
-          timeStr = `${periodStr}${hours}:${minutes}:${seconds}`;
-        } else {
-          const isEven = now.getSeconds() % 2 === 0;
-          timeStr = isEven ? `${periodStr}${hours}:${minutes}` : `${periodStr}${hours} ${minutes}`;
-        }
-
-        renderFormattedDisplay(clockTimeEl, timeStr, false, 0, false);
+      if (showDate) {
+        clockDateEl.style.display = 'block';
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const dayOfWeek = weekDays[now.getDay()];
+        clockDateEl.textContent = `${year}/${month}/${day}/${dayOfWeek}`;
+      } else {
+        clockDateEl.style.display = 'none';
       }
 
       checkActiveTasks(now);
     }
 
-    function renderFormattedDisplay(containerEl, formattedStr, isRunning = false, precision = 0, isMuteable = false) {
+    function updateClockSettings() {
+      updateClock();
+      saveAllData();
+    }
+
+    setInterval(updateClock, 1000);
+
+    function updateTimeContainer(containerEl, timeStr, blinkColon = false, isRunning = false, precision = 0) {
       if (!containerEl) return;
 
       const isAnimEnabled = document.getElementById('anim-enable-cb')?.checked ?? true;
       const animType = document.getElementById('anim-type-select')?.value || 'slide';
       const animTarget = document.getElementById('anim-target-select')?.value || 'all';
 
-      let tokens = [];
-      let currentNumToken = '';
-
-      for (let i = 0; i < formattedStr.length; i++) {
-        const char = formattedStr[i];
-        if (/\d|#/.test(char)) {
-          currentNumToken += char;
-        } else {
-          if (currentNumToken.length > 0) {
-            tokens.push(currentNumToken);
-            currentNumToken = '';
-          }
-          tokens.push(char);
-        }
-      }
-      if (currentNumToken.length > 0) {
-        tokens.push(currentNumToken);
-      }
-
-      let totalNumDigits = 0;
-      tokens.forEach(tok => {
-        if (/^[\d#]+$/.test(tok)) {
-          totalNumDigits += tok.length;
-        }
-      });
+      const tokens = timeStr.match(/(\d+|[#]+|:|[^\d#:]+)/g) || [timeStr];
+      const totalNumDigits = timeStr.replace(/[^\d#]/g, '').length;
 
       let expectedTypes = [];
       tokens.forEach(tok => {
-        if (tok === ':') {
-          expectedTypes.push('colon');
-        } else if (/^[^\d#:]+$/.test(tok)) {
-          expectedTypes.push('unit');
-        } else {
-          expectedTypes.push('num');
+        if (tok === ':') expectedTypes.push('colon');
+        else if (/^[^\d#:]+$/.test(tok)) expectedTypes.push('unit');
+        else {
+          for (let i = 0; i < tok.length; i++) expectedTypes.push('num');
         }
       });
 
-      let currentParts = Array.from(containerEl.children);
-      let needsRebuild = false;
+      const currentParts = Array.from(containerEl.children);
+      let needsRebuild = (currentParts.length !== expectedTypes.length);
 
-      if (currentParts.length !== expectedTypes.length) {
-        needsRebuild = true;
-      } else {
+      if (!needsRebuild) {
         for (let i = 0; i < expectedTypes.length; i++) {
           const el = currentParts[i];
           const exp = expectedTypes[i];
-          if (
-            (exp === 'colon' && !el.classList.contains('colon-part')) ||
-            (exp === 'unit' && !el.classList.contains('unit-part')) ||
-            (exp === 'num' && !el.classList.contains('num-part'))
-          ) {
+          if ((exp === 'colon' && !el.classList.contains('colon-part')) ||
+              (exp === 'unit' && !el.classList.contains('unit-part')) ||
+              (exp === 'num' && !el.classList.contains('num-part'))) {
             needsRebuild = true;
             break;
           }
         }
       }
-
-      const blinkColon = formattedStr.includes(' ');
 
       if (needsRebuild) {
         containerEl.innerHTML = '';
@@ -997,6 +916,7 @@
               const char = tok[i];
               const numPart = document.createElement('span');
               numPart.className = `num-part anim-${animType}`;
+              
               const inner = document.createElement('span');
               inner.className = 'digit-inner';
               if (char === '#') {
@@ -1042,24 +962,23 @@
               if (inner.innerHTML !== newContent && inner.textContent !== char) {
                 inner.innerHTML = newContent;
 
-                const isMilliDigit = precision > 0 && (totalNumDigits - currentDigitIndex) <= precision;
-                let allowAnim = isAnimEnabled;
-                if (allowAnim) {
-                  if (animTarget === 'sec-only' && isMilliDigit) allowAnim = false;
-                  if (animTarget === 'milli-only' && !isMilliDigit) allowAnim = false;
-                }
+                const isMilliDigit = precision > 0 && (totalNumDigits - currentDigitIndex <= precision);
+                const isAllowAnim = isAnimEnabled && (
+                  animTarget === 'all' ||
+                  (animTarget === 'sec-only' && !isMilliDigit) ||
+                  (animTarget === 'milli-only' && isMilliDigit)
+                );
 
-                if (allowAnim) {
+                if (isAllowAnim) {
                   inner.classList.remove('animating');
                   void inner.offsetWidth;
                   inner.classList.add('animating');
                 }
               }
-
-              currentDigitIndex++;
             }
+            mainIdx++;
+            currentDigitIndex++;
           }
-          mainIdx++;
         }
       });
     }
@@ -1068,13 +987,14 @@
       const cardEl = document.createElement('div');
       cardEl.className = 'card';
       cardEl.id = `${card.id}-card`;
-      cardEl.style.width = card.width || '350px';
-      cardEl.style.height = card.height || '250px';
+      
+      if (card.width) cardEl.style.width = card.width;
+      if (card.height) cardEl.style.height = card.height;
 
       let contentHtml = '';
 
       if (card.type === 'sw') {
-        const sw = swData[card.id] || { name: card.title, running: false, elapsed: 0, mode: 'work', hide: false, displayFormat: 'standard' };
+        const sw = swData[card.id] || { name: card.title, running: false, elapsed: 0, startTimeStr: '--:--:--', mode: 'work', hide: false, displayFormat: 'standard' };
         swData[card.id] = sw;
 
         contentHtml = `
@@ -1114,11 +1034,7 @@
           </div>
         `;
       } else if (card.type === 'timer') {
-        const t = timerData[card.id] || {
-          name: card.title, running: false, isPristine: true, currentPhase: 'A', initialMsA: 1500000, initialMsB: 300000, remainingMs: 1500000,
-          mode: 'work', type: 'duration', unitA: 'min_sec', valA1: 0, valA2: 25, valA3: 0, unitB: 'min_sec', valB1: 0, valB2: 5, valB3: 0,
-          targetDate: '', targetTime: '12:00', mute: false, autoSwitch: true, repeatCount: 1, currentRepeat: 1, startTimeStr: '--:--:--', endTimeStr: '--:--:--'
-        };
+        const t = timerData[card.id] || { name: card.title, running: false, isPristine: true, currentPhase: 'A', initialMsA: 300000, initialMsB: 60000, remainingMs: 300000, startTimeStr: '--:--:--', endTimeStr: '--:--:--', mode: 'work', type: 'normal', mute: false, hide: false, unitA: 'min_sec', valA1: 5, valA2: 0, valA3: 0, unitB: 'min_sec', valB1: 1, valB2: 0, valB3: 0, targetDate: getTodayYMD(), targetTime: '12:00', displayFormat: 'standard' };
         timerData[card.id] = t;
 
         contentHtml = `
@@ -1131,40 +1047,53 @@
             </div>
           </div>
           <div class="card-header">
-            <span class="card-title">${escapeHtml(card.title)}</span>
+            <div>
+              <span class="card-title">${escapeHtml(card.title)}</span>
+              <span id="${card.id}-status-badge" class="status-badge work" style="margin-left: 4px;">作業中</span>
+            </div>
             <div class="controls-header">
-              <span id="${card.id}-badge" class="status-badge ${t.mode}">${t.mode==='work'?'作業':'休憩'}</span>
-              <select id="${card.id}-type" onchange="onTimerTypeOrModeChange('${card.id}')">
-                <option value="duration" ${t.type==='duration'?'selected':''}>時間指定</option>
-                <option value="target" ${t.type==='target'?'selected':''}>時刻指定</option>
+              <select id="${card.id}-format" onchange="timerData['${card.id}'].displayFormat=this.value; updateDisplays(); saveAllData();" title="表示フォーマット">
+                <option value="standard" ${t.displayFormat==='standard'?'selected':''}>標準 (01:10:00)</option>
+                <option value="kanji" ${t.displayFormat==='kanji'?'selected':''}>漢字 (1時間10分00秒)</option>
+                <option value="total_min" ${t.displayFormat==='total_min'?'selected':''}>分換算 (70分00秒)</option>
+                <option value="total_sec" ${t.displayFormat==='total_sec'?'selected':''}>秒換算 (4200秒)</option>
               </select>
-              <select id="${card.id}-mode" onchange="onTimerTypeOrModeChange('${card.id}')">
+              <select id="${card.id}-mode" onchange="timerData['${card.id}'].mode=this.value; onTimerTypeOrModeChange('${card.id}');">
                 <option value="work" ${t.mode==='work'?'selected':''}>作業</option>
                 <option value="rest" ${t.mode==='rest'?'selected':''}>休憩</option>
               </select>
+              <select id="${card.id}-type" onchange="timerData['${card.id}'].type=this.value; onTimerTypeOrModeChange('${card.id}');">
+                <option value="normal" ${t.type==='normal'?'selected':''}>通常</option>
+                <option value="target" ${t.type==='target'?'selected':''}>時刻指定</option>
+                <option value="repeat" ${t.type==='repeat'?'selected':''}>リピート</option>
+                <option value="interval" ${t.type==='interval'?'selected':''}>インターバル</option>
+              </select>
+              <label class="checkbox-label" style="margin-left: 2px;">
+                <input type="checkbox" id="${card.id}-hide" ${t.hide?'checked':''} onchange="timerData['${card.id}'].hide=this.checked; updateDisplays(); saveAllData();"> 隠す
+              </label>
             </div>
           </div>
           <div class="timer-setup-group">
-            <div id="${card.id}-setup-target" class="timer-setup" style="display: ${t.type==='target'?'flex':'none'};">
-              <span>目標:</span>
-              <input type="date" id="${card.id}-target-date" value="${t.targetDate}" onchange="setTimerTime('${card.id}')">
-              <input type="time" id="${card.id}-target-time" value="${t.targetTime}" onchange="setTimerTime('${card.id}')">
-            </div>
-            <div id="${card.id}-setup-a" class="timer-setup" style="display: ${t.type==='duration'?'flex':'none'};">
-              <span>フェーズA:</span>
+            <div class="timer-setup" id="${card.id}-setup-a">
+              <span id="${card.id}-label-a">設定:</span> 
               <select id="${card.id}-unit-a" onchange="renderTimerInputs('${card.id}', 'A')">
-                <option value="hr_min_sec" ${t.unitA==='hr_min_sec'?'selected':''}>時 / 分 / 秒</option>
-                <option value="hr_min" ${t.unitA==='hr_min'?'selected':''}>時 / 分</option>
+                <option value="hr_min_sec" ${t.unitA==='hr_min_sec'?'selected':''}>時間 / 分 / 秒</option>
+                <option value="hr_min" ${t.unitA==='hr_min'?'selected':''}>時間 / 分</option>
                 <option value="min_sec" ${t.unitA==='min_sec'?'selected':''}>分 / 秒</option>
                 <option value="sec_only" ${t.unitA==='sec_only'?'selected':''}>秒のみ</option>
               </select>
               <span id="${card.id}-inputs-a"></span>
             </div>
-            <div id="${card.id}-setup-b" class="timer-setup" style="display: ${t.type==='duration'?'flex':'none'};">
-              <span>フェーズB:</span>
+            <div class="timer-setup" id="${card.id}-setup-target" style="display: none;">
+              <span>目標:</span> 
+              <input type="date" id="${card.id}-target-date" value="${t.targetDate || getTodayYMD()}" onchange="setTimerTime('${card.id}')">
+              <input type="time" id="${card.id}-target-time" value="${t.targetTime}" onchange="setTimerTime('${card.id}')">
+            </div>
+            <div class="timer-setup" id="${card.id}-setup-b" style="display: none;">
+              <span>休憩(B):</span> 
               <select id="${card.id}-unit-b" onchange="renderTimerInputs('${card.id}', 'B')">
-                <option value="hr_min_sec" ${t.unitB==='hr_min_sec'?'selected':''}>時 / 分 / 秒</option>
-                <option value="hr_min" ${t.unitB==='hr_min'?'selected':''}>時 / 分</option>
+                <option value="hr_min_sec" ${t.unitB==='hr_min_sec'?'selected':''}>時間 / 分 / 秒</option>
+                <option value="hr_min" ${t.unitB==='hr_min'?'selected':''}>時間 / 分</option>
                 <option value="min_sec" ${t.unitB==='min_sec'?'selected':''}>分 / 秒</option>
                 <option value="sec_only" ${t.unitB==='sec_only'?'selected':''}>秒のみ</option>
               </select>
@@ -1205,17 +1134,20 @@
           </div>
           <div class="card-header">
             <span class="card-title">${escapeHtml(card.title)}</span>
+            <div class="controls-header">
+              <button class="btn btn-reset" style="padding: 2px 6px;" onclick="resetTotalWorkTime()">合計リセット</button>
+              <label class="checkbox-label" style="margin-left: 8px;">
+                <input type="checkbox" id="total-hide" onchange="updateDisplays(); saveAllData();"> 隠す
+              </label>
+            </div>
           </div>
-          <div class="time-display" id="total-work-display">00:00:00</div>
-          <div style="font-size:0.75rem; color:var(--sub-text-color); margin-bottom:4px;">※作業モードで稼働した合計時間です。</div>
-          <div class="controls-body">
-            <button class="btn btn-reset" onclick="resetTotalWorkTime()">合計をリセット</button>
-          </div>
+          <div class="time-display" id="total-work-display" style="color: var(--accent-color);"></div>
+          <div class="note">※個別リセットを行っても合計値は保持されます</div>
         `;
       } else if (card.type === 'task') {
         contentHtml = `
           <div class="card-top-bar">
-            <span style="font-size: 0.75rem; color: var(--sub-text-color);">[スケジュール/タスク]</span>
+            <span style="font-size: 0.75rem; color: var(--sub-text-color);">[スケジュール]</span>
             <div class="card-move-btns">
               <button class="icon-btn btn-move-left" title="左へ移動">←</button>
               <button class="icon-btn btn-move-right" title="右へ移動">→</button>
@@ -1224,7 +1156,7 @@
           </div>
           <div class="card-header">
             <span class="card-title">${escapeHtml(card.title)}</span>
-            <button class="btn btn-toggle" style="padding:2px 8px; font-size:0.75rem;" onclick="toggleTaskModal()">新規登録 ＋</button>
+            <button class="btn btn-reset" style="padding: 2px 8px;" onclick="toggleTaskModal()">＋ タスク追加</button>
           </div>
           <div class="task-list" id="task-list-container"></div>
         `;
@@ -1232,9 +1164,9 @@
 
       cardEl.innerHTML = contentHtml;
 
-      cardEl.querySelector('.btn-remove')?.addEventListener('click', () => removeCard(card.id));
-      cardEl.querySelector('.btn-move-left')?.addEventListener('click', () => moveCard(card.id, -1));
-      cardEl.querySelector('.btn-move-right')?.addEventListener('click', () => moveCard(card.id, 1));
+      cardEl.querySelector('.btn-move-left')?.addEventListener('click', () => moveCardDOM(card.id, -1));
+      cardEl.querySelector('.btn-move-right')?.addEventListener('click', () => moveCardDOM(card.id, 1));
+      cardEl.querySelector('.btn-remove')?.addEventListener('click', () => removeCardDOM(card.id));
 
       setupResizeSnap(cardEl, card);
 
@@ -1244,26 +1176,29 @@
     function renderTimerInputs(id, phase) {
       const t = timerData[id];
       if (!t) return;
-      const unitVal = (phase === 'A') ? document.getElementById(`${id}-unit-a`)?.value || t.unitA : document.getElementById(`${id}-unit-b`)?.value || t.unitB;
-      if (phase === 'A') t.unitA = unitVal; else t.unitB = unitVal;
 
+      const unitEl = document.getElementById(`${id}-unit-${phase.toLowerCase()}`);
       const containerEl = document.getElementById(`${id}-inputs-${phase.toLowerCase()}`);
-      if (!containerEl) return;
+      if (!unitEl || !containerEl) return;
 
-      let v1 = (phase === 'A') ? t.valA1 : t.valB1;
-      let v2 = (phase === 'A') ? t.valA2 : t.valB2;
-      let v3 = (phase === 'A') ? t.valA3 : t.valB3;
+      const unitVal = unitEl.value;
+      if (phase === 'A') t.unitA = unitVal;
+      else t.unitB = unitVal;
+
+      let v1 = phase === 'A' ? (t.valA1 ?? 0) : (t.valB1 ?? 0);
+      let v2 = phase === 'A' ? (t.valA2 ?? 5) : (t.valB2 ?? 1);
+      let v3 = phase === 'A' ? (t.valA3 ?? 0) : (t.valB3 ?? 0);
 
       let html = '';
       if (unitVal === 'hr_min_sec') {
-        html = `<input type="number" id="${id}-v1-${phase}" min="0" value="${v1}" onchange="setTimerTime('${id}')">時
-                <input type="number" id="${id}-v2-${phase}" min="0" max="59" value="${v2}" onchange="setTimerTime('${id}')">分
+        html = `<input type="number" id="${id}-v1-${phase}" min="0" value="${v1}" onchange="setTimerTime('${id}')">時 
+                <input type="number" id="${id}-v2-${phase}" min="0" max="59" value="${v2}" onchange="setTimerTime('${id}')">分 
                 <input type="number" id="${id}-v3-${phase}" min="0" max="59" value="${v3}" onchange="setTimerTime('${id}')">秒`;
       } else if (unitVal === 'hr_min') {
-        html = `<input type="number" id="${id}-v1-${phase}" min="0" value="${v1}" onchange="setTimerTime('${id}')">時
+        html = `<input type="number" id="${id}-v1-${phase}" min="0" value="${v1}" onchange="setTimerTime('${id}')">時 
                 <input type="number" id="${id}-v2-${phase}" min="0" max="59" value="${v2}" onchange="setTimerTime('${id}')">分`;
       } else if (unitVal === 'min_sec') {
-        html = `<input type="number" id="${id}-v1-${phase}" min="0" value="${v2}" onchange="setTimerTime('${id}')">分
+        html = `<input type="number" id="${id}-v1-${phase}" min="0" value="${v2}" onchange="setTimerTime('${id}')">分 
                 <input type="number" id="${id}-v2-${phase}" min="0" max="59" value="${v3}" onchange="setTimerTime('${id}')">秒`;
       } else if (unitVal === 'sec_only') {
         html = `<input type="number" id="${id}-v1-${phase}" min="0" value="${v3}" onchange="setTimerTime('${id}')">秒`;
@@ -1275,16 +1210,19 @@
 
     function setupResizeSnap(cardEl, card) {
       let resizeTimer = null;
+
       const observer = new ResizeObserver(entries => {
         for (let entry of entries) {
           const gridWidth = document.getElementById('dashboard-grid').clientWidth;
           const currentWidth = entry.contentRect.width + 28;
+
           card.width = `${currentWidth}px`;
           card.height = `${entry.contentRect.height + 20}px`;
 
           clearTimeout(resizeTimer);
           resizeTimer = setTimeout(() => {
             const ratio = currentWidth / gridWidth;
+
             if (ratio > 0.88) {
               const fullWidth = `${gridWidth - 16}px`;
               cardEl.style.width = fullWidth;
@@ -1302,6 +1240,7 @@
           }, 200);
         }
       });
+
       observer.observe(cardEl);
     }
 
@@ -1320,16 +1259,75 @@
         if (card.type === 'timer') {
           renderTimerInputs(card.id, 'A');
           renderTimerInputs(card.id, 'B');
+          onTimerTypeOrModeChange(card.id);
+        }
+      });
+
+      Array.from(grid.children).forEach(child => {
+        const id = child.id.replace('-card', '');
+        if (!dashboardCards.some(c => c.id === id)) {
+          child.remove();
         }
       });
 
       renderTaskList();
     }
 
+    function moveCardDOM(cardId, direction) {
+      const index = dashboardCards.findIndex(c => c.id === cardId);
+      if (index === -1) return;
+
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= dashboardCards.length) return;
+
+      const temp = dashboardCards[index];
+      dashboardCards[index] = dashboardCards[newIndex];
+      dashboardCards[newIndex] = temp;
+
+      const grid = document.getElementById('dashboard-grid');
+      const cardEl = document.getElementById(`${cardId}-card`);
+      const targetCardEl = document.getElementById(`${dashboardCards[index].id}-card`);
+
+      if (direction === 1) {
+        grid.insertBefore(cardEl, targetCardEl.nextSibling);
+      } else {
+        grid.insertBefore(cardEl, targetCardEl);
+      }
+
+      saveAllData();
+    }
+
+    function removeCardDOM(cardId) {
+      const targetCard = dashboardCards.find(c => c.id === cardId);
+      let isRunning = false;
+
+      if (targetCard) {
+        if (targetCard.type === 'sw' && swData[cardId]?.running) {
+          isRunning = true;
+        } else if (targetCard.type === 'timer' && timerData[cardId]?.running) {
+          isRunning = true;
+        }
+      }
+
+      if (isRunning) {
+        const confirmDelete = confirm(`${targetCard.title} は現在動作中です。本当に削除しますか？`);
+        if (!confirmDelete) return;
+      }
+
+      if (swData[cardId]) delete swData[cardId];
+      if (timerData[cardId]) delete timerData[cardId];
+
+      dashboardCards = dashboardCards.filter(c => c.id !== cardId);
+      const cardEl = document.getElementById(`${cardId}-card`);
+      if (cardEl) cardEl.remove();
+      saveAllData();
+    }
+
     function addCard(type) {
-      const id = 'card_' + Date.now();
       const count = dashboardCards.filter(c => c.type === type).length + 1;
+      let id = type + Date.now();
       let title = '';
+
       if (type === 'sw') title = `ストップウォッチ ${count}`;
       else if (type === 'timer') title = `タイマー ${count}`;
       else if (type === 'task') title = `登録済みタスク一覧`;
@@ -1338,10 +1336,17 @@
       const fontScale = parseFloat(document.getElementById('font-scale-slider')?.value || 1);
       const baseWidth = 350;
       const baseHeight = 250;
+
       const calcWidth = Math.max(baseWidth, Math.round(baseWidth * fontScale));
       const calcHeight = Math.max(baseHeight, Math.round(baseHeight * (1 + (fontScale - 1) * 0.6)));
 
-      const newCard = { id, type, title, width: `${calcWidth}px`, height: `${calcHeight}px` };
+      const newCard = {
+        id,
+        type,
+        title,
+        width: `${calcWidth}px`,
+        height: `${calcHeight}px`
+      };
       dashboardCards.push(newCard);
 
       const grid = document.getElementById('dashboard-grid');
@@ -1355,31 +1360,6 @@
       }
 
       toggleAddCardModal();
-      saveAllData();
-    }
-
-    function removeCard(id) {
-      if (confirm('このカードを削除しますか？')) {
-        dashboardCards = dashboardCards.filter(c => c.id !== id);
-        const cardEl = document.getElementById(`${id}-card`);
-        if (cardEl) cardEl.remove();
-        delete swData[id];
-        delete timerData[id];
-        saveAllData();
-      }
-    }
-
-    function moveCard(id, direction) {
-      const idx = dashboardCards.findIndex(c => c.id === id);
-      if (idx < 0) return;
-      const newIdx = idx + direction;
-      if (newIdx < 0 || newIdx >= dashboardCards.length) return;
-
-      const temp = dashboardCards[idx];
-      dashboardCards[idx] = dashboardCards[newIdx];
-      dashboardCards[newIdx] = temp;
-
-      renderDashboard();
       saveAllData();
     }
 
@@ -1401,93 +1381,88 @@
       }
     }
 
-    function toggleAddCardModal() {
-      document.getElementById('add-card-modal').classList.toggle('active');
-    }
+    function toggleAddCardModal() { document.getElementById('add-card-modal').classList.toggle('active'); }
+    function closeAddCardModal(event) { if (event.target.id === 'add-card-modal') toggleAddCardModal(); }
 
-    function closeAddCardModal(event) {
-      if (event.target.id === 'add-card-modal') {
-        document.getElementById('add-card-modal').classList.remove('active');
-      }
-    }
-
-    function toggleTaskModal() {
-      document.getElementById('task-modal').classList.toggle('active');
-    }
-
-    function closeTaskModal(event) {
-      if (event.target.id === 'task-modal') {
-        document.getElementById('task-modal').classList.remove('active');
-      }
-    }
+    function toggleTaskModal() { document.getElementById('task-modal').classList.toggle('active'); }
+    function closeTaskModal(event) { if (event.target.id === 'task-modal') toggleTaskModal(); }
 
     function addNewTask() {
-      const name = document.getElementById('task-name').value.trim();
-      const startTime = document.getElementById('task-start-time').value;
-      const endTime = document.getElementById('task-end-time').value;
-      const repeat = document.getElementById('task-repeat').value;
+      const nameInput = document.getElementById('task-name');
+      const startInput = document.getElementById('task-start-time');
+      const endInput = document.getElementById('task-end-time');
+      const repeatSelect = document.getElementById('task-repeat');
 
-      if (!name) {
-        alert('タスク名を入力してください。');
-        return;
-      }
+      const name = nameInput.value.trim();
+      if (!name) { alert('タスク名を入力してください。'); return; }
 
       const now = new Date();
       const dateStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 
-      const newTask = {
-        id: 'task_' + Date.now(),
-        name,
-        startTime,
-        endTime,
-        repeat,
-        dateStr
-      };
+      taskList.push({
+        id: Date.now(),
+        name: name,
+        startTime: startInput.value,
+        endTime: endInput.value,
+        repeat: repeatSelect.value,
+        dateStr: dateStr
+      });
 
-      taskList.push(newTask);
-      document.getElementById('task-name').value = '';
+      nameInput.value = '';
       toggleTaskModal();
       renderTaskList();
+      updateClock();
       saveAllData();
     }
 
-    function deleteTask(taskId) {
-      taskList = taskList.filter(t => t.id !== taskId);
+    function deleteTask(id) {
+      taskList = taskList.filter(task => task.id !== id);
       renderTaskList();
+      updateClock();
       saveAllData();
     }
 
     function renderTaskList() {
       const container = document.getElementById('task-list-container');
       if (!container) return;
+      container.innerHTML = '';
 
       if (taskList.length === 0) {
-        container.innerHTML = '<div style="font-size:0.8rem; color:var(--sub-text-color); padding:8px;">登録されているタスクはありません。</div>';
+        container.innerHTML = '<div style="font-size:0.75rem; color:var(--sub-text-color); text-align:center; margin-top:10px;">登録中のタスクはありません</div>';
         return;
       }
 
-      let html = '';
       taskList.forEach(task => {
+        const item = document.createElement('div');
+        item.className = 'task-item';
         const repeatLabel = task.repeat === 'daily' ? '毎日' : '今日のみ';
-        html += `
-          <div class="task-item">
-            <div class="task-item-info">
-              <span class="task-item-title">${escapeHtml(task.name)}</span>
-              <span class="task-item-time">${task.startTime} 〜 ${task.endTime} (${repeatLabel})</span>
-            </div>
-            <button class="task-delete-btn" onclick="deleteTask('${task.id}')" title="削除">✕</button>
+
+        item.innerHTML = `
+          <div class="task-item-info">
+            <span class="task-item-title">${escapeHtml(task.name)}</span>
+            <span class="task-item-time">${task.startTime}〜${task.endTime} (${repeatLabel})</span>
           </div>
+          <button class="task-delete-btn" onclick="deleteTask(${task.id})">✕</button>
         `;
+        container.appendChild(item);
       });
-      container.innerHTML = html;
     }
 
-    function formatMs(ms, precision = 3, format = 'standard') {
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
+    }
+
+    function formatMS(ms, precision, format = 'standard') {
+      if (ms < 0) ms = 0;
+      
       const totalSeconds = Math.floor(ms / 1000);
       const h = Math.floor(totalSeconds / 3600);
       const m = Math.floor((totalSeconds % 3600) / 60);
       const s = totalSeconds % 60;
-
+      
       let msSuffix = '';
       if (precision > 0) {
         let msStr = String(ms % 1000).padStart(3, '0');
@@ -1518,23 +1493,26 @@
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.8);
-
+        osc.frequency.value = 880;
         osc.connect(gain);
         gain.connect(ctx.destination);
-
         osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.8);
         osc.stop(ctx.currentTime + 0.8);
-      } catch (e) {
-        console.error('Audio play failed:', e);
-      }
+      } catch (e) { console.error(e); }
     }
 
-    function updateDisplays() {
+    function flashCardRed(id) {
+      const card = document.getElementById(`${id}-card`);
+      if (!card) return;
+      card.classList.remove('flash-red');
+      void card.offsetWidth;
+      card.classList.add('flash-red');
+      setTimeout(() => { card.classList.remove('flash-red'); }, 3000);
+    }
+
+    function gameLoop() {
       const now = Date.now();
       const delta = now - lastTickTime;
       lastTickTime = now;
@@ -1547,267 +1525,64 @@
           sw.elapsed += delta;
           if (sw.mode === 'work') isAnyWorkActive = true;
         }
-
-        const el = document.getElementById(`${id}-display`);
-        if (el) {
-          if (sw.hide) {
-            renderFormattedDisplay(el, buildMaskString(swPrecision), sw.running, swPrecision, true);
-          } else {
-            const timeStr = formatMs(sw.elapsed, swPrecision, sw.displayFormat);
-            renderFormattedDisplay(el, timeStr, sw.running, swPrecision, true);
-          }
-        }
       }
 
       for (let id in timerData) {
         const t = timerData[id];
         if (t.running) {
           t.remainingMs -= delta;
-          if (t.mode === 'work') isAnyWorkActive = true;
+
+          const isWork = (t.type === 'interval') ? (t.currentPhase === 'A') : (t.mode === 'work');
+          if (isWork) isAnyWorkActive = true;
 
           if (t.remainingMs <= 0) {
-            t.remainingMs = 0;
-            t.running = false;
+            if (t.mute) flashCardRed(id);
+            else playBeep();
 
-            const cardEl = document.getElementById(`${id}-card`);
-            if (cardEl) {
-              cardEl.classList.add('flash-red');
-              setTimeout(() => cardEl.classList.remove('flash-red'), 3000);
-            }
-
-            if (!t.mute) playBeep();
-
-            if (t.autoSwitch) {
+            if (t.type === 'normal' || t.type === 'target') {
+              t.remainingMs = 0;
+              toggleTimer(id);
+            } else if (t.type === 'repeat') {
+              t.remainingMs = t.initialMsA;
+              recalculateTimerEndTime(id);
+            } else if (t.type === 'interval') {
               if (t.currentPhase === 'A') {
                 t.currentPhase = 'B';
-                t.mode = 'rest';
                 t.remainingMs = t.initialMsB;
               } else {
                 t.currentPhase = 'A';
-                t.mode = 'work';
                 t.remainingMs = t.initialMsA;
-                t.currentRepeat++;
               }
-
-              const badgeEl = document.getElementById(`${id}-badge`);
-              const modeEl = document.getElementById(`${id}-mode`);
-              if (badgeEl) {
-                badgeEl.textContent = t.mode === 'work' ? '作業' : '休憩';
-                badgeEl.className = `status-badge ${t.mode}`;
-              }
-              if (modeEl) modeEl.value = t.mode;
-
-              if (t.currentRepeat <= t.repeatCount) {
-                t.running = true;
-                const startTime = new Date();
-                t.startTimeStr = formatTimeString(startTime);
-                const endDate = new Date(startTime.getTime() + t.remainingMs);
-                t.endTimeStr = formatTimeString(endDate);
-
-                const stEl = document.getElementById(`${id}-start-time`);
-                const etEl = document.getElementById(`${id}-end-time`);
-                if (stEl) stEl.textContent = t.startTimeStr;
-                if (etEl) etEl.textContent = t.endTimeStr;
-              }
-            } else {
-              const btn = document.getElementById(`${id}-toggle-btn`);
-              if (btn) {
-                btn.textContent = 'スタート';
-                btn.classList.remove('running');
-              }
-              setInputsDisabled(id, false);
+              recalculateTimerEndTime(id);
+              updateBadge(id);
             }
           }
         }
-
-        const el = document.getElementById(`${id}-display`);
-        if (el) {
-          const timeStr = formatMs(t.remainingMs, timerPrecision, 'standard');
-          renderFormattedDisplay(el, timeStr, t.running, timerPrecision, true);
-        }
-
-        updateProgressBar(id);
       }
 
-      if (isAnyWorkActive) {
-        accumulatedWorkMs += delta;
-      }
+      if (isAnyWorkActive) accumulatedWorkMs += delta;
 
-      const totalEl = document.getElementById('total-work-display');
-      if (totalEl) {
-        const timeStr = formatMs(accumulatedWorkMs, 0, 'standard');
-        renderFormattedDisplay(totalEl, timeStr, false, 0, false);
-      }
-    }
-
-    setInterval(updateDisplays, 30);
-
-    function buildMaskString(prec) {
-      let s = '##:##:##';
-      if (prec > 0) s += ':' + '#'.repeat(prec);
-      return s;
-    }
-
-    function resetTotalWorkTime() {
-      accumulatedWorkMs = 0;
       updateDisplays();
-      saveAllData();
+      requestAnimationFrame(gameLoop);
     }
 
-    function toggleDrawer() {
-      document.getElementById('drawer-overlay').classList.toggle('active');
-      document.getElementById('drawer-menu').classList.toggle('active');
-    }
-
-    function setFont(fontFamily, defaultGap, digitWidth, element) {
-      document.documentElement.style.setProperty('--app-font-family', fontFamily);
-      document.documentElement.style.setProperty('--app-digit-width', digitWidth || '0.68em');
-      updateCharGap(defaultGap !== undefined ? defaultGap : 0);
-
-      document.querySelectorAll('.font-card').forEach(el => el.classList.remove('active'));
-      if (element) element.classList.add('active');
-      saveAllData();
-    }
-
-    function updateCharGap(pxVal) {
-      const val = parseInt(pxVal) || 0;
-      document.documentElement.style.setProperty('--app-char-gap', `${val}px`);
-      const slider = document.getElementById('char-gap-slider');
-      const valText = document.getElementById('char-gap-val');
-      if (slider) slider.value = val;
-      if (valText) valText.textContent = `${val}px`;
-      saveAllData();
-    }
-
-    function updateBlindDigits(val) {
-      blindDigitsCount = parseInt(val) || 0;
-      const textVal = document.getElementById('blind-digits-val');
-      if (textVal) {
-        textVal.textContent = blindDigitsCount === 0 ? 'なし' : `${blindDigitsCount}桁`;
-      }
-      updateDisplays();
-      saveAllData();
-    }
-
-    function updateFontScale(val) {
-      document.documentElement.style.setProperty('--app-font-scale', val);
-      saveAllData();
-    }
-
-    function updateFontWeight(val) {
-      document.documentElement.style.setProperty('--app-font-weight', val);
-      saveAllData();
-    }
-
-    function updatePrecision(type, val) {
-      if (type === 'sw') {
-        swPrecision = parseInt(val);
-        document.getElementById('sw-precision-val').textContent = `${swPrecision}桁`;
-      } else {
-        timerPrecision = parseInt(val);
-        document.getElementById('timer-precision-val').textContent = `${timerPrecision}桁`;
-      }
-      updateDisplays();
-      saveAllData();
-    }
-
-    function setTheme(theme) {
-      if (theme === 'system') {
-        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-      } else {
-        document.documentElement.setAttribute('data-theme', theme);
-      }
-      saveAllData();
-    }
-
-    function toggleAccordion(id, btn) {
-      const content = document.getElementById(id);
-      if (content) {
-        content.classList.toggle('active');
-        const icon = btn.querySelector('.acc-icon');
-        if (icon) icon.textContent = content.classList.contains('active') ? '∧' : '∨';
-      }
-    }
-
-    function updateCustomColor(cssVar, val) {
-      document.documentElement.style.setProperty(cssVar, val);
-      saveAllData();
-    }
-
-    function saveAllData() {
-      const activeFontCard = document.querySelector('.font-card.active');
-      const fontIdx = Array.from(document.querySelectorAll('.font-card')).indexOf(activeFontCard);
-
-      const data = {
-        swData,
-        timerData,
-        accumulatedWorkMs,
-        dashboardCards,
-        swPrecision,
-        timerPrecision,
-        blindDigitsCount,
-        taskList,
-        clockSettings: {
-          showTime: document.getElementById('show-time-cb').checked,
-          showDate: document.getElementById('show-date-cb').checked,
-          secMode: document.querySelector('input[name="sec-mode"]:checked')?.value || 'show',
-          hourMode: document.querySelector('input[name="hour-mode"]:checked')?.value || '24',
-          periodStyle: document.querySelector('input[name="period-style"]:checked')?.value || 'ja'
-        },
-        animSettings: {
-          enable: document.getElementById('anim-enable-cb').checked,
-          type: document.getElementById('anim-type-select').value,
-          target: document.getElementById('anim-target-select').value
-        },
-        styleSettings: {
-          charGap: document.getElementById('char-gap-slider')?.value || 0,
-          fontScale: document.getElementById('font-scale-slider')?.value || 1,
-          fontWeight: document.getElementById('font-weight-slider')?.value || 700,
-          theme: document.querySelector('input[name="theme"]:checked')?.value || 'light',
-          activeFontIdx: fontIdx,
-          customColors: {
-            text: document.getElementById('color-text')?.value,
-            btn: document.getElementById('color-btn')?.value,
-            bg: document.getElementById('color-bg')?.value
-          }
-        },
-        lastSavedTime: Date.now()
-      };
-
-      try {
-        localStorage.setItem('multi_timer_clock_app_data', JSON.stringify(data));
-      } catch (e) {
-        console.error('Failed to save to localStorage:', e);
-      }
-    }
-
-    setInterval(() => {
-      saveAllData();
-    }, 1000);
+    setInterval(() => { saveAllData(); }, 1000);
 
     function toggleSW(id) {
       const sw = swData[id];
       if (!sw) return;
-
       sw.running = !sw.running;
-      const btn = document.getElementById(`${id}-toggle-btn`);
 
+      const btn = document.getElementById(`${id}-toggle-btn`);
       if (sw.running) {
-        if (btn) {
-          btn.textContent = 'ストップ';
-          btn.classList.add('running');
-        }
+        if (btn) { btn.textContent = 'ストップ'; btn.classList.add('running'); }
         if (sw.elapsed === 0 || sw.startTimeStr === '--:--:--') {
           sw.startTimeStr = formatTimeString(new Date());
           const stEl = document.getElementById(`${id}-start-time`);
           if (stEl) stEl.textContent = sw.startTimeStr;
         }
       } else {
-        if (btn) {
-          btn.textContent = 'スタート';
-          btn.classList.remove('running');
-        }
+        if (btn) { btn.textContent = 'スタート'; btn.classList.remove('running'); }
       }
       saveAllData();
     }
@@ -1815,14 +1590,11 @@
     function resetSW(id) {
       const sw = swData[id];
       if (!sw) return;
-
       if (sw.running) toggleSW(id);
-
       sw.elapsed = 0;
       sw.startTimeStr = '--:--:--';
       const stEl = document.getElementById(`${id}-start-time`);
       if (stEl) stEl.textContent = sw.startTimeStr;
-
       updateDisplays();
       saveAllData();
     }
@@ -1833,44 +1605,60 @@
 
       const typeEl = document.getElementById(`${id}-type`);
       const modeEl = document.getElementById(`${id}-mode`);
-
       if (typeEl) t.type = typeEl.value;
       if (modeEl) t.mode = modeEl.value;
 
       const setupA = document.getElementById(`${id}-setup-a`);
       const setupTarget = document.getElementById(`${id}-setup-target`);
       const setupB = document.getElementById(`${id}-setup-b`);
+      const labelA = document.getElementById(`${id}-label-a`);
+
+      if (!setupA) return;
 
       if (t.type === 'target') {
-        if (setupTarget) setupTarget.style.display = 'flex';
-        if (setupA) setupA.style.display = 'none';
-        if (setupB) setupB.style.display = 'none';
+        setupA.style.display = 'none';
+        setupTarget.style.display = 'flex';
+        setupB.style.display = 'none';
+        modeEl.style.display = 'inline-block';
+      } else if (t.type === 'interval') {
+        setupA.style.display = 'flex';
+        setupTarget.style.display = 'none';
+        setupB.style.display = 'flex';
+        labelA.textContent = '作業(A):';
+        modeEl.style.display = 'none';
       } else {
-        if (setupTarget) setupTarget.style.display = 'none';
-        if (setupA) setupA.style.display = 'flex';
-        if (setupB) setupB.style.display = 'flex';
+        setupA.style.display = 'flex';
+        setupTarget.style.display = 'none';
+        setupB.style.display = 'none';
+        labelA.textContent = '設定:';
+        modeEl.style.display = 'inline-block';
       }
-
-      const badgeEl = document.getElementById(`${id}-badge`);
-      if (badgeEl) {
-        badgeEl.textContent = t.mode === 'work' ? '作業' : '休憩';
-        badgeEl.className = `status-badge ${t.mode}`;
-      }
-
       setTimerTime(id);
-      saveAllData();
     }
 
-    function readInputValue(id, phase, inputIdx) {
-      const el = document.getElementById(`${id}-v${inputIdx}-${phase}`);
-      return el ? (parseInt(el.value) || 0) : 0;
+    function calculateMsToTargetTime(targetDateStr, targetTimeStr) {
+      if (!targetTimeStr) return 0;
+      const datePart = targetDateStr || getTodayYMD();
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [targetH, targetM] = targetTimeStr.split(':').map(Number);
+      
+      const targetDate = new Date(year, month - 1, day, targetH, targetM, 0, 0);
+      const diff = targetDate.getTime() - Date.now();
+      return diff > 0 ? diff : 0;
     }
 
-    function getMsFromUnit(id, phase, unit) {
+    function calcPhaseMs(id, phase) {
       const t = timerData[id];
-      let v1 = readInputValue(id, phase, 1);
-      let v2 = readInputValue(id, phase, 2);
-      let v3 = readInputValue(id, phase, 3);
+      if (!t) return 0;
+
+      const unit = phase === 'A' ? t.unitA : t.unitB;
+      const v1El = document.getElementById(`${id}-v1-${phase}`);
+      const v2El = document.getElementById(`${id}-v2-${phase}`);
+      const v3El = document.getElementById(`${id}-v3-${phase}`);
+
+      const v1 = parseInt(v1El?.value) || 0;
+      const v2 = parseInt(v2El?.value) || 0;
+      const v3 = parseInt(v3El?.value) || 0;
 
       if (phase === 'A') {
         if (unit === 'hr_min_sec') { t.valA1 = v1; t.valA2 = v2; t.valA3 = v3; }
@@ -1909,54 +1697,56 @@
       if (t.type === 'target') {
         const diffMs = calculateMsToTargetTime(t.targetDate, t.targetTime);
         t.initialMsA = diffMs;
-        t.initialMsB = 0;
+        if (!t.running && t.isPristine) t.remainingMs = diffMs;
       } else {
-        t.initialMsA = getMsFromUnit(id, 'A', t.unitA);
-        t.initialMsB = getMsFromUnit(id, 'B', t.unitB);
+        t.initialMsA = calcPhaseMs(id, 'A');
+        t.initialMsB = calcPhaseMs(id, 'B');
+        if (!t.running && t.isPristine) {
+          t.currentPhase = 'A';
+          t.remainingMs = t.initialMsA;
+        }
       }
-
-      if (t.isPristine) {
-        t.remainingMs = (t.currentPhase === 'A') ? t.initialMsA : t.initialMsB;
-      }
-
+      
+      updateBadge(id);
       updateDisplays();
       saveAllData();
     }
 
-    function calculateMsToTargetTime(dateStr, timeStr) {
-      if (!timeStr) return 0;
-      const now = new Date();
-      let targetYear = now.getFullYear();
-      let targetMonth = now.getMonth();
-      let targetDate = now.getDate();
-
-      if (dateStr) {
-        const parts = dateStr.split('-').map(Number);
-        if (parts.length === 3) {
-          targetYear = parts[0];
-          targetMonth = parts[1] - 1;
-          targetDate = parts[2];
-        }
-      }
-
-      const [h, m] = timeStr.split(':').map(Number);
-      let target = new Date(targetYear, targetMonth, targetDate, h, m, 0, 0);
-
-      if (!dateStr && target.getTime() <= now.getTime()) {
-        target.setDate(target.getDate() + 1);
-      }
-
-      const diff = target.getTime() - now.getTime();
-      return Math.max(diff, 0);
+    function setInputsDisabled(id, disabled) {
+      const elIds = [
+        `${id}-unit-a`, `${id}-v1-A`, `${id}-v2-A`, `${id}-v3-A`,
+        `${id}-unit-b`, `${id}-v1-B`, `${id}-v2-B`, `${id}-v3-B`,
+        `${id}-target-date`, `${id}-target-time`
+      ];
+      elIds.forEach(eid => {
+        const el = document.getElementById(eid);
+        if (el) el.disabled = disabled;
+      });
     }
 
-    function setInputsDisabled(id, disabled) {
-      const inputs = document.querySelectorAll(`#${id}-card input, #${id}-card select`);
-      inputs.forEach(input => {
-        if (input.id !== `${id}-toggle-btn` && input.id !== `${id}-mute`) {
-          input.disabled = disabled;
-        }
-      });
+    function updateBadge(id) {
+      const t = timerData[id];
+      const badge = document.getElementById(`${id}-status-badge`);
+      if (!t || !badge) return;
+
+      const isWork = (t.type === 'interval') ? (t.currentPhase === 'A') : (t.mode === 'work');
+      if (isWork) {
+        badge.textContent = '作業中';
+        badge.className = 'status-badge work';
+      } else {
+        badge.textContent = '休憩中';
+        badge.className = 'status-badge rest';
+      }
+    }
+
+    function recalculateTimerEndTime(id) {
+      const t = timerData[id];
+      if (!t) return;
+      const now = new Date();
+      const endDate = new Date(now.getTime() + t.remainingMs);
+      t.endTimeStr = formatTimeString(endDate);
+      const endEl = document.getElementById(`${id}-end-time`);
+      if (endEl) endEl.textContent = t.endTimeStr;
     }
 
     function toggleTimer(id) {
@@ -1966,16 +1756,17 @@
       const btn = document.getElementById(`${id}-toggle-btn`);
 
       if (!t.running) {
+        if (t.type === 'target') {
+          const diffMs = calculateMsToTargetTime(t.targetDate, t.targetTime);
+          t.initialMsA = diffMs;
+          t.remainingMs = diffMs;
+        }
+
         if (t.remainingMs <= 0) return;
 
         t.running = true;
         t.isPristine = false;
-
-        if (btn) {
-          btn.textContent = 'ストップ';
-          btn.classList.add('running');
-        }
-
+        if (btn) { btn.textContent = 'ストップ'; btn.classList.add('running'); }
         setInputsDisabled(id, true);
 
         const now = new Date();
@@ -1989,10 +1780,7 @@
         if (etEl) etEl.textContent = t.endTimeStr;
       } else {
         t.running = false;
-        if (btn) {
-          btn.textContent = 'スタート';
-          btn.classList.remove('running');
-        }
+        if (btn) { btn.textContent = 'スタート'; btn.classList.remove('running'); }
       }
       saveAllData();
     }
@@ -2004,12 +1792,8 @@
       if (t.running) {
         t.running = false;
         const btn = document.getElementById(`${id}-toggle-btn`);
-        if (btn) {
-          btn.textContent = 'スタート';
-          btn.classList.remove('running');
-        }
+        if (btn) { btn.textContent = 'スタート'; btn.classList.remove('running'); }
       }
-
       t.isPristine = true;
       t.startTimeStr = '--:--:--';
       t.endTimeStr = '--:--:--';
@@ -2027,12 +1811,10 @@
       const t = timerData[id];
       const barFill = document.getElementById(`${id}-bar`);
       const percentEl = document.getElementById(`${id}-percent`);
-
       if (!t || !barFill || !percentEl) return;
 
       const totalMs = (t.currentPhase === 'A') ? t.initialMsA : t.initialMsB;
       let ratio = 0;
-
       if (totalMs > 0) {
         const elapsed = totalMs - t.remainingMs;
         ratio = Math.min(Math.max(elapsed / totalMs, 0), 1);
@@ -2042,58 +1824,206 @@
       percentEl.textContent = `経過: ${percentStr}%`;
       barFill.style.width = `${percentStr}%`;
 
-      if (t.mode === 'work') {
-        barFill.style.backgroundColor = 'var(--accent-color)';
+      let color = '#3b82f6';
+      if (ratio > 0.85) color = '#ef4444';
+      else if (ratio > 0.6) color = '#eab308';
+      else if (ratio > 0.33) color = '#22c55e';
+      barFill.style.backgroundColor = color;
+    }
+
+    function updateDisplays() {
+      const maskStr = precisionMask(swPrecision);
+      const timerMaskStr = precisionMask(timerPrecision);
+
+      dashboardCards.forEach(card => {
+        if (card.type === 'sw') {
+          const sw = swData[card.id];
+          const displayEl = document.getElementById(`${card.id}-display`);
+          if (displayEl && sw) {
+            const swStr = sw.hide ? maskStr : formatMS(sw.elapsed, swPrecision, sw.displayFormat);
+            updateTimeContainer(displayEl, swStr, false, sw.running, swPrecision);
+          }
+        } else if (card.type === 'timer') {
+          const t = timerData[card.id];
+          const displayEl = document.getElementById(`${card.id}-display`);
+          if (displayEl && t) {
+            const tStr = t.hide ? timerMaskStr : formatMS(t.remainingMs, timerPrecision, t.displayFormat);
+            updateTimeContainer(displayEl, tStr, false, t.running, timerPrecision);
+            updateProgressBar(card.id);
+          }
+        } else if (card.type === 'total') {
+          const totalEl = document.getElementById('total-work-display');
+          const totalHide = document.getElementById('total-hide')?.checked;
+          if (totalEl) {
+            const totalStr = totalHide ? maskStr : formatMS(accumulatedWorkMs, swPrecision, 'standard');
+            updateTimeContainer(totalEl, totalStr, false, false, swPrecision);
+          }
+        }
+      });
+    }
+
+    function precisionMask(prec) {
+      let s = '##:##:##';
+      if (prec > 0) s += ':' + '#'.repeat(prec);
+      return s;
+    }
+
+    function resetTotalWorkTime() {
+      accumulatedWorkMs = 0;
+      updateDisplays();
+      saveAllData();
+    }
+
+    function toggleDrawer() {
+      document.getElementById('drawer-overlay').classList.toggle('active');
+      document.getElementById('drawer-menu').classList.toggle('active');
+    }
+
+    function setFont(fontFamily, defaultGap, digitWidth, element) {
+      document.documentElement.style.setProperty('--app-font-family', fontFamily);
+      document.documentElement.style.setProperty('--app-digit-width', digitWidth || '0.68em');
+
+      updateCharGap(defaultGap !== undefined ? defaultGap : 0);
+
+      document.querySelectorAll('.font-card').forEach(el => el.classList.remove('active'));
+      if (element) element.classList.add('active');
+      saveAllData();
+    }
+
+    function updateCharGap(pxVal) {
+      const val = parseInt(pxVal) || 0;
+      document.documentElement.style.setProperty('--app-char-gap', `${val}px`);
+      
+      const slider = document.getElementById('char-gap-slider');
+      const valText = document.getElementById('char-gap-val');
+      if (slider) slider.value = val;
+      if (valText) valText.textContent = `${val}px`;
+
+      saveAllData();
+    }
+
+    function updateBlindDigits(val) {
+      blindDigitsCount = parseInt(val) || 0;
+      const textVal = document.getElementById('blind-digits-val');
+      if (textVal) {
+        textVal.textContent = blindDigitsCount === 0 ? 'なし' : `${blindDigitsCount}桁`;
+      }
+      updateDisplays();
+      saveAllData();
+    }
+
+    function updateFontScale(val) {
+      document.documentElement.style.setProperty('--app-font-scale', val);
+      saveAllData();
+    }
+
+    function updateFontWeight(val) {
+      document.documentElement.style.setProperty('--app-font-weight', val);
+      saveAllData();
+    }
+
+    function updatePrecision(type, val) {
+      if (type === 'sw') {
+        swPrecision = parseInt(val);
+        document.getElementById('sw-precision-val').textContent = `${swPrecision}桁`;
       } else {
-        barFill.style.backgroundColor = '#eab308';
+        timerPrecision = parseInt(val);
+        document.getElementById('timer-precision-val').textContent = `${timerPrecision}桁`;
+      }
+      updateDisplays();
+      saveAllData();
+    }
+
+    function setTheme(themeMode) {
+      if (themeMode === 'system') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', themeMode);
+      }
+      saveAllData();
+    }
+
+    function toggleAccordion(id, btn) {
+      const content = document.getElementById(id);
+      const icon = btn.querySelector('.acc-icon');
+      const isActive = content.classList.contains('active');
+      
+      if (isActive) {
+        content.classList.remove('active');
+        icon.textContent = '∨';
+      } else {
+        content.classList.add('active');
+        icon.textContent = '∧';
       }
     }
 
-    function loadStorage() {
+    function updateCustomColor(cssVar, hex) {
+      document.documentElement.style.setProperty(cssVar, hex);
+      saveAllData();
+    }
+
+    const STORAGE_KEY = 'multi_timer_clock_settings_v21';
+
+    function saveAllData() {
+      const activeFontEl = document.querySelector('.font-card.active');
+      const activeFontIdx = Array.from(document.querySelectorAll('.font-card')).indexOf(activeFontEl);
+
+      const saveData = {
+        savedAt: Date.now(),
+        accumulatedWorkMs: accumulatedWorkMs,
+        swData: swData,
+        timerData: timerData,
+        taskList: taskList,
+        dashboardCards: dashboardCards,
+        clockSettings: {
+          showTime: document.getElementById('show-time-cb').checked,
+          showDate: document.getElementById('show-date-cb').checked,
+          secMode: document.querySelector('input[name="sec-mode"][value="show"]')?.checked ? 'show' : 'hide'
+        },
+        animSettings: {
+          enable: document.getElementById('anim-enable-cb').checked,
+          type: document.getElementById('anim-type-select').value,
+          target: document.getElementById('anim-target-select').value
+        },
+        settings: {
+          swPrecision: swPrecision,
+          timerPrecision: timerPrecision,
+          blindDigitsCount: blindDigitsCount,
+          fontScale: document.getElementById('font-scale-slider').value,
+          fontWeight: document.getElementById('font-weight-slider').value,
+          charGap: document.getElementById('char-gap-slider')?.value || 0,
+          activeFontIdx: activeFontIdx,
+          theme: document.querySelector('input[name="theme"]:checked')?.value || 'light',
+          customTextColor: getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim(),
+          customBtnColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-btn-bg').trim(),
+          customBgColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim()
+        }
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
+    }
+
+    function loadAllData() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        renderDashboard();
+        return;
+      }
+
       try {
-        const raw = localStorage.getItem('multi_timer_clock_app_data');
-        if (!raw) {
-          renderDashboard();
-          setInterval(updateClock, 1000);
-          updateClock();
-          return;
-        }
-
         const data = JSON.parse(raw);
-        const lastSaved = data.lastSavedTime || Date.now();
-        const elapsedSinceSave = Date.now() - lastSaved;
+        const now = Date.now();
+        const elapsedSinceSave = now - (data.savedAt || now);
 
+        accumulatedWorkMs = data.accumulatedWorkMs || 0;
+        taskList = data.taskList || [];
         if (data.dashboardCards) dashboardCards = data.dashboardCards;
-        if (data.accumulatedWorkMs) accumulatedWorkMs = data.accumulatedWorkMs;
-        if (data.swPrecision !== undefined) {
-          swPrecision = data.swPrecision;
-          const slider = document.getElementById('sw-precision-slider');
-          if (slider) slider.value = swPrecision;
-          document.getElementById('sw-precision-val').textContent = `${swPrecision}桁`;
-        }
-        if (data.timerPrecision !== undefined) {
-          timerPrecision = data.timerPrecision;
-          const slider = document.getElementById('timer-precision-slider');
-          if (slider) slider.value = timerPrecision;
-          document.getElementById('timer-precision-val').textContent = `${timerPrecision}桁`;
-        }
-        if (data.blindDigitsCount !== undefined) {
-          updateBlindDigits(data.blindDigitsCount);
-        }
-        if (data.taskList) taskList = data.taskList;
 
         if (data.clockSettings) {
           document.getElementById('show-time-cb').checked = data.clockSettings.showTime ?? true;
           document.getElementById('show-date-cb').checked = data.clockSettings.showDate ?? true;
-          
           const secRadio = document.querySelector(`input[name="sec-mode"][value="${data.clockSettings.secMode}"]`);
           if (secRadio) secRadio.checked = true;
-
-          const hourRadio = document.querySelector(`input[name="hour-mode"][value="${data.clockSettings.hourMode}"]`);
-          if (hourRadio) hourRadio.checked = true;
-
-          const periodRadio = document.querySelector(`input[name="period-style"][value="${data.clockSettings.periodStyle}"]`);
-          if (periodRadio) periodRadio.checked = true;
         }
 
         if (data.animSettings) {
@@ -2104,16 +2034,28 @@
           }
         }
 
-        if (data.styleSettings) {
-          const s = data.styleSettings;
-          if (s.fontScale !== undefined) {
-            const fontScaleSlider = document.getElementById('font-scale-slider');
-            if (fontScaleSlider) fontScaleSlider.value = s.fontScale;
+        if (data.settings) {
+          const s = data.settings;
+          if (s.swPrecision !== undefined) {
+            swPrecision = s.swPrecision;
+            document.getElementById('sw-precision-slider').value = swPrecision;
+            document.getElementById('sw-precision-val').textContent = `${swPrecision}桁`;
+          }
+          if (s.timerPrecision !== undefined) {
+            timerPrecision = s.timerPrecision;
+            document.getElementById('timer-precision-slider').value = timerPrecision;
+            document.getElementById('timer-precision-val').textContent = `${timerPrecision}桁`;
+          }
+          if (s.blindDigitsCount !== undefined) {
+            updateBlindDigits(s.blindDigitsCount);
+            document.getElementById('blind-digits-slider').value = s.blindDigitsCount;
+          }
+          if (s.fontScale) {
+            document.getElementById('font-scale-slider').value = s.fontScale;
             updateFontScale(s.fontScale);
           }
-          if (s.fontWeight !== undefined) {
-            const fontWeightSlider = document.getElementById('font-weight-slider');
-            if (fontWeightSlider) fontWeightSlider.value = s.fontWeight;
+          if (s.fontWeight) {
+            document.getElementById('font-weight-slider').value = s.fontWeight;
             updateFontWeight(s.fontWeight);
           }
           if (s.charGap !== undefined) {
@@ -2127,20 +2069,6 @@
             const radio = document.querySelector(`input[name="theme"][value="${s.theme}"]`);
             if (radio) radio.checked = true;
             setTheme(s.theme);
-          }
-          if (s.customColors) {
-            if (s.customColors.text) {
-              document.getElementById('color-text').value = s.customColors.text;
-              updateCustomColor('--text-color', s.customColors.text);
-            }
-            if (s.customColors.btn) {
-              document.getElementById('color-btn').value = s.customColors.btn;
-              updateCustomColor('--primary-btn-bg', s.customColors.btn);
-            }
-            if (s.customColors.bg) {
-              document.getElementById('color-bg').value = s.customColors.bg;
-              updateCustomColor('--bg-color', s.customColors.bg);
-            }
           }
         }
 
@@ -2164,20 +2092,18 @@
         }
 
         renderDashboard();
-        updateClockSettings();
-        setInterval(updateClock, 1000);
         updateClock();
         updateDisplays();
       } catch (e) {
         console.error('Failed to load storage:', e);
         renderDashboard();
-        setInterval(updateClock, 1000);
-        updateClock();
       }
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      loadStorage();
+      loadAllData();
+      lastTickTime = Date.now();
+      requestAnimationFrame(gameLoop);
     });
   </script>
 </body>
